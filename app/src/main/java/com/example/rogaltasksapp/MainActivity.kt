@@ -220,7 +220,7 @@ object RetroFitInstance {
             .create(ApiService::class.java)
     }
 }
-
+// Test
 class ZadaniaRepository(private val apiService: ApiService) {
     suspend fun getTasks(id:Int,data:String): List<Task> = apiService.getTasks(id).zadania
     suspend fun addTask(id:Int, req : AddTaskPOST) = apiService.addTask(id, req)
