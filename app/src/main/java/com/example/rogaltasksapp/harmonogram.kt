@@ -1,5 +1,7 @@
 package com.example.rogaltasksapp
 
+import android.R
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -39,6 +41,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,12 +57,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import org.json.JSONObject
+import java.util.Calendar
 import java.util.Locale
 
 data class DniTygodnia(
     val nazwa: String,
     var check: Boolean = false,
-    val id: Int = nextId()
+    val id: Int = nextId(),
+    val hour: Int = 12,
+    val minute : Int = 0
 ) {
     companion object {
         private var counter = 0
@@ -69,22 +76,68 @@ data class DniTygodnia(
         }
     }
 }
+
+fun JSONifyDataEditWeeks(dniTygodnia :MutableList<DniTygodnia>, interval: Int) : String
+{
+    val temp = dniTygodnia
+    temp.filter{it -> !it.check}
+    val json = JSONObject().apply{
+        put("interval",interval)
+        temp.forEach { it -> put("day", it.id); put("time", String.format("%02d:%02d", it.hour, it.minute)); }
+    }
+    return json.toString()
+}
+fun JSONifyDataEditDay(godzina: String, interval: Int, start:String) : String
+{
+    val json = JSONObject().apply{
+        put("interval",interval)
+        put("time", godzina)
+        put("date", start)
+    }
+    return json.toString()
+}
+fun JSONifyDataAddWeeks(dniTygodnia :MutableList<DniTygodnia>, interval: Int) : String
+{
+    var temp = dniTygodnia.filter{it -> it.check};
+    val json = JSONObject().apply{
+        put("interval",interval)
+        temp.forEach { it -> put(String.format("day%d", it.id), String.format("%02d:%02d", it.hour, it.minute)); }
+    }
+    return json.toString()
+}
+fun JSONifyDataAddDay(godzina: String, interval: Int, start:String) : String
+{
+    val json = JSONObject().apply{
+        put("interval",interval)
+        put("time", godzina)
+        put("date", start)
+    }
+    return json.toString()
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
 {
+    val currentTime = Calendar.getInstance()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var harmo = listOf(Harmonogram(0,"Dodaj nowy", "")) + uiState.wpisyHarmo
     var selectExpanded by remember {mutableStateOf(false)}
     var selectedName by remember {mutableStateOf(harmo[0].nazwa)}
     var selectedID by remember {mutableStateOf(0)}
-    val options = listOf("Dni", "Tygodnie", "Miesiace", "Lata")
+    val options = listOf("Dni", "Tygodnie")
+    var newName by remember {mutableStateOf("")}
     var selectExpanded1 by remember {mutableStateOf(false)}
+    var showStartDate by remember {mutableStateOf(false)}
     var selected by remember { mutableStateOf(options[0]) }
     var intervalSelect by remember { mutableStateOf("1") }
     var showDialogTime by remember {mutableStateOf(false)}
     val dniTygodnia = remember {mutableStateListOf(DniTygodnia("Poniedziałek"),DniTygodnia("Wtorek"), DniTygodnia("Środa"), DniTygodnia("Czwartek"), DniTygodnia("Piątek"), DniTygodnia("Sobota"), DniTygodnia("Niedziela"))}
-
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = currentTime.timeInMillis + 1000*60*60*24)
+    var selectedStartDate = datePickerState.selectedDateMillis?.let {
+        convertMillisToDate(it)
+    } ?: ""
     val timePickerDayState = rememberTimePickerState(
         initialHour = 12,
         initialMinute = 0,
@@ -102,6 +155,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
             horizontalAlignment = Alignment.CenterHorizontally
         )
         {
+            // Podstawowy naglowek i wybor wpisu
             item {
                 Text("Harmonogram", fontSize = 22.sp)
                 ExposedDropdownMenuBox(
@@ -139,23 +193,16 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                     }
                 }
             }
+            // Podnaglowek w zaleznosci od wybranego trybu wpisu + wspolne wybory dla kazdego z nich
             item {
                 if (selectedID==0)
                 {
-                    var newName by remember {mutableStateOf("")}
                     Spacer(Modifier.height(16.dp))
                     Text("Nowy wpis", fontSize = 22.sp)
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = {})
-                    {
-                        Text("Dodaj")
-                    }
-
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
                         value = newName,
                         label = {Text("Nazwa wpisu")},
-                        placeholder = {Text("Ćwiczenia")},
                         onValueChange = {newName=it},
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedTextColor = Color(0xffeaeaea)
@@ -167,10 +214,14 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                     Spacer(Modifier.height(16.dp))
                     Text("Edytuj wpis", fontSize = 22.sp)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = {})
-                    {
-                        Text("Edytuj")
-                    }
+                    OutlinedTextField(
+                        value = if (newName=="") selectedName?:"" else newName,
+                        label = {Text("Zmień nazwe")},
+                        onValueChange = {newName=it},
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedTextColor = Color(0xffeaeaea)
+                        )
+                    )
                 }
                 Spacer(Modifier.height(16.dp))
                 ExposedDropdownMenuBox(
@@ -207,8 +258,6 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                     }
 
                 }
-            }
-            item {
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = intervalSelect,
@@ -219,6 +268,9 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                     ),
                     isError = intervalSelect.isBlank() || intervalSelect.toIntOrNull() == null
                 )
+            }
+            // Wybor godziny i startu dla odstepow dniowych
+            item {
                 Spacer(Modifier.height(16.dp))
                 AnimatedVisibility(
                     visible = selected==options[0],
@@ -266,9 +318,49 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                                 }
                             }
                         }
+                        Spacer(Modifier.height(16.dp))
+                        Box() {
+                            OutlinedTextField(
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedTextColor = Color(0xffeaeaea)
+                                ),
+                                label = {Text("Start")},
+                                value = selectedStartDate,
+                                onValueChange = { },
+                                readOnly = true,
+                                trailingIcon = {
+                                    IconButton(onClick = { showStartDate = !showStartDate }) {
+                                        Icon(
+                                            imageVector = Icons.Default.DateRange,
+                                            contentDescription = ""
+                                        )
+                                    }
+                                },
+                            )
+
+                            if (showStartDate) {
+                                Popup(
+                                    onDismissRequest = { showStartDate = false },
+                                    alignment = Alignment.TopStart
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(y = 64.dp)
+                                            .padding(16.dp)
+                                    ) {
+                                        DatePicker(
+                                            state = datePickerState,
+                                            showModeToggle = false
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                     }
                 }
             }
+            // Dobor dni tygodnia
             item {
 
                 AnimatedVisibility(
@@ -293,47 +385,99 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                                     onCheckedChange = { dniTygodnia[item.id] = dniTygodnia[item.id].copy(check = it) }
                                 )
                             }
-                            }
-                        Box() {
-                            OutlinedTextField(
-                                label = {Text("Godzina")},
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedTextColor = Color(0xffeaeaea)
-                                ),
-                                value = String.format(Locale.getDefault(), "%02d:%02d", timePickerDayState.hour,timePickerDayState.minute),
-                                onValueChange = { },
-                                readOnly = true,
-                                trailingIcon = {
-                                    IconButton(onClick = { showDialogTime = !showDialogTime }) {
-                                        Icon(
-                                            imageVector = Icons.Default.DateRange,
-                                            contentDescription = "Select date"
-                                        )
-                                    }
-                                },
+                            AnimatedVisibility(
+                                visible = item.check,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
                             )
-
-                            if (showDialogTime) {
-                                Popup(
-                                    onDismissRequest = { showDialogTime = false },
-                                    alignment = Alignment.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(Color(0xfd303030), shape= RoundedCornerShape(16.dp))
-                                            .padding(16.dp)
-                                    ) {
-
-                                        TimePicker(
-                                            state = timePickerDayState,
+                            {
+                                var showDialogTimeTemp by remember {mutableStateOf(false)}
+                                val timePickerStateTemp = rememberTimePickerState(
+                                    initialHour = item.hour,
+                                    initialMinute = item.minute,
+                                    is24Hour = true,
+                                )
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally)
+                                {
+                                    Box() {
+                                        OutlinedTextField(
+                                            label = {Text("Godzina")},
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                unfocusedTextColor = Color(0xffeaeaea)
+                                            ),
+                                            value = String.format(Locale.getDefault(), "%02d:%02d", timePickerStateTemp.hour,timePickerStateTemp.minute),
+                                            onValueChange = { },
+                                            readOnly = true,
+                                            trailingIcon = {
+                                                IconButton(onClick = { showDialogTimeTemp = !showDialogTimeTemp }) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.DateRange,
+                                                        contentDescription = "Select date"
+                                                    )
+                                                }
+                                            },
                                         )
+
+                                        if (showDialogTimeTemp) {
+                                            Popup(
+                                                onDismissRequest = { showDialogTimeTemp = false; dniTygodnia[item.id] = item.copy(
+                                                        hour = timePickerStateTemp.hour,
+                                                        minute = timePickerStateTemp.minute
+                                                    ) },
+                                                alignment = Alignment.Center
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(Color(0xfd303030), shape= RoundedCornerShape(16.dp))
+                                                        .padding(16.dp)
+                                                ) {
+
+                                                    TimePicker(
+                                                        state = timePickerStateTemp,
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
+                                    Spacer(Modifier.height(16.dp))
                                 }
                             }
                         }
                     }
                 }
             }
+            // Przycisk na koncu
+            item {
+                if (selectedID==0)
+                {
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = {
+                        if (selected == options[0]) Log.d("DayAdd", JSONifyDataAddDay(
+                        String.format(Locale.getDefault(), "%02d:%02d", timePickerDayState.hour,timePickerDayState.minute), intervalSelect.toInt(), selectedStartDate))
+                        else Log.d("DayAdd", JSONifyDataAddWeeks(dniTygodnia, intervalSelect.toInt()))
+                    })
+                    {
+                        Text("Dodaj")
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+                else
+                {
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = {
+                        if (selected == options[0]) Log.d("DayAdd", JSONifyDataEditDay(
+                            String.format(Locale.getDefault(), "%02d:%02d", timePickerDayState.hour,timePickerDayState.minute), intervalSelect.toInt(), selectedStartDate))
+                        else Log.d("DayAdd", JSONifyDataEditWeeks(dniTygodnia, intervalSelect.toInt(),))
+
+                    })
+                    {
+                        Text("Edytuj")
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+
         }
         else
         {
