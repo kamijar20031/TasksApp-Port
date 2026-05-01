@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 
 data class UiState(
     val isLoading: Boolean = true,
+    val isHarmoLoading: Boolean = true,
     val zadania: List<Pair<Task, List<Child>>> = emptyList(),
     var wpisyHarmo: List<Harmonogram> = emptyList(),
     val errors: String? = null,
@@ -32,6 +33,8 @@ class ZadaniaRepository(private val apiService: ApiService) {
     suspend fun login(request : LoginPOST) = apiService.login(request)
     suspend fun register(request : LoginPOST) = apiService.register(request)
     suspend fun getHarmo(id:Int) = apiService.getHarmo(id)
+    suspend fun addHarmo(id:Int, request: HarmoPOST) = apiService.addHarmo(id,request)
+    suspend fun editHarmo(id:Int, request: HarmoPOST) = apiService.editHarmo(id,request)
 }
 
 class TaskViewModel(val repository: ZadaniaRepository) : ViewModel()
@@ -209,7 +212,7 @@ class TaskViewModel(val repository: ZadaniaRepository) : ViewModel()
     fun getHarmo()
     {
         viewModelScope.launch{
-            _uiState.update{it.copy(isLoading = true)}
+            _uiState.update{it.copy(isHarmoLoading = true)}
             try{
 
                 val response = repository.getHarmo(uiState.value.ID?:0)
@@ -219,9 +222,41 @@ class TaskViewModel(val repository: ZadaniaRepository) : ViewModel()
             {
                 Log.e("HARMONOGRAM", "Exception: ${e.message}")
             }
-            _uiState.update{it.copy(isLoading = false)}
+            _uiState.update{it.copy(isHarmoLoading = false)}
         }
     }
+
+    fun addHarmo(request: HarmoPOST)
+    {
+        viewModelScope.launch{
+            _uiState.update{it.copy(isHarmoLoading = true)}
+            try{
+                val response = repository.addHarmo(uiState.value.ID?:0, request)
+                getHarmo()
+            }
+            catch (e: Exception)
+            {
+                Log.e("HARMONOGRAM", "Exception: ${e.message}")
+            }
+            _uiState.update{it.copy(isHarmoLoading = false)}
+        }
+    }
+    fun editHarmo(request: HarmoPOST, harmoID: Int)
+    {
+        viewModelScope.launch{
+            _uiState.update{it.copy(isHarmoLoading = true)}
+            try{
+                val response = repository.editHarmo(harmoID, request)
+                getHarmo()
+            }
+            catch (e: Exception)
+            {
+                Log.e("HARMONOGRAM", "Exception: ${e.message}")
+            }
+            _uiState.update{it.copy(isHarmoLoading = false)}
+        }
+    }
+
 }
 
 class TaskViewModelFactory(private val repo : ZadaniaRepository) : ViewModelProvider.Factory

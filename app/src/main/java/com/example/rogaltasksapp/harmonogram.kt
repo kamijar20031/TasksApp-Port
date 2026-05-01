@@ -44,6 +44,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,9 +58,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDate
+import java.time.LocalDate.parse
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
+import kotlin.apply
 
 data class DniTygodnia(
     val nazwa: String,
@@ -69,45 +77,42 @@ data class DniTygodnia(
     val minute : Int = 0
 ) {
     companion object {
+
         private var counter = 0
 
+        fun resetCounter() {
+            counter = 0
+        }
         private fun nextId(): Int {
             return counter++
         }
     }
 }
 
-fun JSONifyDataEditWeeks(dniTygodnia :MutableList<DniTygodnia>, interval: Int) : String
-{
-    val temp = dniTygodnia
-    temp.filter{it -> !it.check}
-    val json = JSONObject().apply{
-        put("interval",interval)
-        temp.forEach { it -> put("day", it.id); put("time", String.format("%02d:%02d", it.hour, it.minute)); }
-    }
-    return json.toString()
-}
-fun JSONifyDataEditDay(godzina: String, interval: Int, start:String) : String
-{
-    val json = JSONObject().apply{
-        put("interval",interval)
-        put("time", godzina)
-        put("date", start)
-    }
-    return json.toString()
-}
 fun JSONifyDataAddWeeks(dniTygodnia :MutableList<DniTygodnia>, interval: Int) : String
 {
     var temp = dniTygodnia.filter{it -> it.check};
+    val days = JSONArray().apply{
+            temp.forEach {
+                it -> put(JSONObject().apply{
+                    put("id", it.id)
+                    put("hour", it.hour )
+                    put ("minute", it.minute)
+            });
+            }
+    }
     val json = JSONObject().apply{
+
+        put("type", "weekly")
         put("interval",interval)
-        temp.forEach { it -> put(String.format("day%d", it.id), String.format("%02d:%02d", it.hour, it.minute)); }
+        put("days", days)
     }
     return json.toString()
 }
 fun JSONifyDataAddDay(godzina: String, interval: Int, start:String) : String
 {
     val json = JSONObject().apply{
+        put("type", "daily")
         put("interval",interval)
         put("time", godzina)
         put("date", start)
@@ -122,9 +127,9 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
 {
     val currentTime = Calendar.getInstance()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var harmo = listOf(Harmonogram(0,"Dodaj nowy", "")) + uiState.wpisyHarmo
+    val harmo by remember(uiState.wpisyHarmo){ derivedStateOf { listOf(Harmonogram(0,"Dodaj nowy" )) + uiState.wpisyHarmo  } }
     var selectExpanded by remember {mutableStateOf(false)}
-    var selectedName by remember {mutableStateOf(harmo[0].nazwa)}
+    var selectedName by remember(harmo) {mutableStateOf(harmo[0].nazwa)}
     var selectedID by remember {mutableStateOf(0)}
     val options = listOf("Dni", "Tygodnie")
     var newName by remember {mutableStateOf("")}
@@ -149,7 +154,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
         bottomBar={DolnePrzyciski(nav)},
     )
     { padding ->
-        if (!uiState.isLoading)
+        if (!uiState.isHarmoLoading)
         LazyColumn(
             modifier = Modifier.padding(padding).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -163,7 +168,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                     onExpandedChange = { selectExpanded = !selectExpanded }
                 ) {
                     OutlinedTextField(
-                        value = selectedName?:"",
+                        value = selectedName,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Wybierz wpis") },
@@ -182,11 +187,58 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                     ) {
                         harmo.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(item.nazwa?: "") },
+                                text = { Text(item.nazwa)},
                                 onClick = {
-                                    selectedName = item.nazwa?: ""
-                                    selectedID = item.ID?: 0
+                                    selectedName = item.nazwa
+                                    selectedID = item.ID
                                     selectExpanded = false
+                                    datePickerState.selectedDateMillis = currentTime.timeInMillis + 1000*60*60*24
+                                    timePickerDayState.hour = 12
+                                    timePickerDayState.minute = 0
+                                    intervalSelect = "1"
+                                    dniTygodnia.clear()
+                                    DniTygodnia.resetCounter()
+                                    dniTygodnia.addAll(
+                                        listOf(
+                                            DniTygodnia("Poniedziałek"),
+                                            DniTygodnia("Wtorek"),
+                                            DniTygodnia("Środa"),
+                                            DniTygodnia("Czwartek"),
+                                            DniTygodnia("Piątek"),
+                                            DniTygodnia("Sobota"),
+                                            DniTygodnia("Niedziela")
+                                        )
+                                    )
+                                    if (selectedID!=0)
+                                    {
+                                        val temp = item.dni
+                                        intervalSelect = temp?.interval.toString()
+                                        if (item.dni?.type=="daily")
+                                        {
+                                            selected= options[0]
+                                            val (hour,minute) = (temp.time?:"12:00").split(":").map{it.toInt()}
+                                            timePickerDayState.hour = hour
+                                            timePickerDayState.minute = minute
+                                            if (temp.date!=null)
+                                            {
+                                                datePickerState.selectedDateMillis = LocalDate
+                                                    .parse(temp.date, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                                                    .atStartOfDay(ZoneOffset.UTC)
+                                                    .toInstant()
+                                                    .toEpochMilli()
+                                                selectedStartDate = temp.date
+
+
+                                            }
+                                        }
+                                        else
+                                        {
+                                            selected= options[1]
+                                            temp?.days?.forEach {it -> dniTygodnia[it.id] =dniTygodnia[it.id].copy(check = true,hour=it.hour, minute=it.minute)
+                                                }
+                                        }
+                                    }
+
                                 }
                             )
                         }
@@ -215,7 +267,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                     Text("Edytuj wpis", fontSize = 22.sp)
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
-                        value = if (newName=="") selectedName?:"" else newName,
+                        value = if (newName=="") selectedName else newName,
                         label = {Text("Zmień nazwe")},
                         onValueChange = {newName=it},
                         colors = OutlinedTextFieldDefaults.colors(
@@ -453,9 +505,13 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                 {
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = {
-                        if (selected == options[0]) Log.d("DayAdd", JSONifyDataAddDay(
-                        String.format(Locale.getDefault(), "%02d:%02d", timePickerDayState.hour,timePickerDayState.minute), intervalSelect.toInt(), selectedStartDate))
-                        else Log.d("DayAdd", JSONifyDataAddWeeks(dniTygodnia, intervalSelect.toInt()))
+
+                        var json = ""
+                        if (selected == options[0]) json =  JSONifyDataAddDay(
+                        String.format(Locale.getDefault(), "%02d:%02d", timePickerDayState.hour,timePickerDayState.minute), intervalSelect.toInt(), selectedStartDate)
+                        else json = JSONifyDataAddWeeks(dniTygodnia, intervalSelect.toInt())
+                        viewModel.addHarmo(request= HarmoPOST(nazwa = newName, dniD=json))
+                        nav.navigate(Screen.Zadania.route)
                     })
                     {
                         Text("Dodaj")
@@ -466,9 +522,12 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                 {
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = {
-                        if (selected == options[0]) Log.d("DayAdd", JSONifyDataEditDay(
-                            String.format(Locale.getDefault(), "%02d:%02d", timePickerDayState.hour,timePickerDayState.minute), intervalSelect.toInt(), selectedStartDate))
-                        else Log.d("DayAdd", JSONifyDataEditWeeks(dniTygodnia, intervalSelect.toInt(),))
+                        var json = ""
+                        if (selected == options[0]) json =  JSONifyDataAddDay(
+                            String.format(Locale.getDefault(), "%02d:%02d", timePickerDayState.hour,timePickerDayState.minute), intervalSelect.toInt(), selectedStartDate)
+                        else json = JSONifyDataAddWeeks(dniTygodnia, intervalSelect.toInt())
+                        viewModel.editHarmo(request= HarmoPOST(nazwa = newName, dniD=json), harmoID = selectedID)
+                        nav.navigate(Screen.Zadania.route)
 
                     })
                     {

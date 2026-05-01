@@ -29,6 +29,22 @@ data class Child(
 data class TasksResponse(
     val zadania: List<Task>
 )
+
+data class Day(
+    val id: Int,
+    val hour : Int,
+    val minute: Int
+)
+
+data class dniD(
+    val interval : Int,
+    val type: String,
+    val time: String?,
+    val date: String?,
+    val days: List<Day>,
+)
+
+
 data class AddTaskPOST(
     val nazwa : String,
     val dataTemp : String,
@@ -39,6 +55,11 @@ data class LoginPOST(
     val haslo : String,
 )
 
+data class HarmoPOST(
+    val nazwa : String,
+    val dniD : String,
+)
+
 data class ResponseFromServer(
     val message: String? = null,
     val response : String? = null,
@@ -46,9 +67,9 @@ data class ResponseFromServer(
 )
 
 data class Harmonogram(
-    val ID : Int?,
-    val nazwa : String?,
-    val dni : String?,
+    val ID : Int,
+    val nazwa : String,
+    val dni : dniD? = null,
 
 )
 
@@ -72,6 +93,10 @@ interface ApiService
     suspend fun register(@Body request : LoginPOST) : Response<ResponseFromServer>
     @GET(value="harmonogram/{id}")
     suspend fun getHarmo(@Path(value="id") id:Int) : HarmonogramResponse
+    @POST(value="harmonogramCreate/{id}")
+    suspend fun addHarmo(@Path("id") id: Int, @Body request : HarmoPOST)
+    @PATCH(value="harmonogramEdit/{id}")
+    suspend fun editHarmo(@Path("id") id: Int, @Body request : HarmoPOST)
 }
 
 object RetroFitInstance {
