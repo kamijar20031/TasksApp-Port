@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +38,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -52,7 +55,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 
-
+@Composable
+fun InternetBar(internet: Boolean)
+{
+  if (!internet)
+    Box(modifier=Modifier.fillMaxWidth().background(Color(0xFF0162CB)).statusBarsPadding().height(32.dp).padding(all=4.dp), contentAlignment = Alignment.Center) {
+        Text("Tryb offline")
+    }
+}
 @Composable
 fun DrawInfoRow(nazwa:String?, data: String?)
 {
@@ -155,6 +165,8 @@ fun Zadania(nav: NavHostController, viewModel : TaskViewModel)
                 Icon(NavigationScreens.AddTask.icon, contentDescription = "",)
             }
         },
+        topBar = {InternetBar(uiState.internet)}
+
     )
     { padding ->
         if (!uiState.isLoading)
@@ -163,6 +175,10 @@ fun Zadania(nav: NavHostController, viewModel : TaskViewModel)
                 horizontalAlignment = Alignment.CenterHorizontally,
             )
             {
+                Button(onClick = {nav.navigate(Screen.Random.route)})
+                {
+                    Text("Losuj zadania")
+                }
                 LazyColumn(Modifier.fillMaxWidth(0.8f), horizontalAlignment = Alignment.CenterHorizontally, contentPadding = PaddingValues(top = 12.dp))
                 {
 

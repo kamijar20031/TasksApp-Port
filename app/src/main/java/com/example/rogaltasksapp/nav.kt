@@ -33,6 +33,7 @@ sealed class Screen(val route: String)
     object Ustawienia: Screen("ustawienia")
     object Logowanie : Screen("login")
     object Rejestrowanie : Screen("register")
+    object Random : Screen("randomTask")
 }
 
 sealed class NavigationScreens(
@@ -111,6 +112,10 @@ fun MainNav(viewModel : TaskViewModel)
             composable(route = Screen.AddZad.route)
             {
                 Dodaj(navController, viewModel)
+            }
+            composable(route = Screen.Random.route)
+            {
+                LosujScreen(navController, viewModel)
             }
         }
     }

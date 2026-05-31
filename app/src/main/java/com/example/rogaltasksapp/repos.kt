@@ -37,6 +37,7 @@ class ZadaniaRepository @Inject constructor(private val apiService: ApiService) 
     suspend fun addHarmo(id:Int, request: HarmoPOST) = apiService.addHarmo(id,request)
     suspend fun editHarmo(id:Int, request: HarmoPOST) = apiService.editHarmo(id,request)
     suspend fun updateFCM(id: Int, request : String) = apiService.updateFCM(id, request)
+    suspend fun editTask(id:Int, request: TaskEditPOST) = apiService.editTask(id, request)
 }
 
 
@@ -45,9 +46,15 @@ class DaoRepository @Inject constructor(
 )
 {
     suspend fun getTasks(ID:Int): List<ParentWithChildren> = rogalDao.getParentsWithChildren(ID)
-
-    suspend fun syncTasks(list :List<ZadaniaEntity>) = rogalDao.syncTasks(list)
-    suspend fun syncHarmo(list:List<Harmonogram>) = rogalDao.syncHarmo(list)
-    suspend fun getHarmo(ID:Int): List<Harmonogram> = rogalDao.getHarmo(ID)
+    suspend fun getTasksRaw(ID:Int) : List<ZadaniaEntity> = rogalDao.getTasksRaw(ID)
+    suspend fun deleteTask(ID: Int) = rogalDao.deleteTask(ID)
+    suspend fun finishTask(ID: Int) = rogalDao.finishTask(ID)
+    suspend fun addTask(task: ZadaniaEntity) : Long = rogalDao.addTask(task)
+    suspend fun addDeletion(type :TaskDeletionEntity) = rogalDao.addDeletion(type)
+    suspend fun deleteDeletion(ID:Int) = rogalDao.deleteDeletion(ID)
+    suspend fun addAddition(type :TaskAdditionEntity) = rogalDao.addAddition(type)
+    suspend fun deleteAddition(ID:Int) = rogalDao.deleteAddition(ID)
+    suspend fun getDeletion(ID:Int) = rogalDao.findDeletions(ID)
+    suspend fun getAddition(ID:Int) = rogalDao.findAdditions(ID)
 
 }

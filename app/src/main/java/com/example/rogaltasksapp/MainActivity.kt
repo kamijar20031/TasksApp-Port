@@ -31,7 +31,9 @@ import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
+import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.room.Room
 import dagger.Binds
 import dagger.Module
@@ -65,7 +67,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(context, AppDatabase::class.java, "rogalOffline_db").addMigrations(MIGRATION_1_2).build()
+        return Room.databaseBuilder(context, AppDatabase::class.java, "rogalOffline_db").build()
     }
     @Provides
     @Singleton
@@ -115,9 +117,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
 {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     Scaffold(
         Modifier.fillMaxWidth(),
         bottomBar={DolnePrzyciski(nav)},
+        topBar = {InternetBar(uiState.internet)}
     )
     { padding ->
         Column(

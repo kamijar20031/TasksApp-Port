@@ -34,7 +34,8 @@ interface ApiService
     suspend fun addHarmo(@Path("id") id: Int, @Body request : HarmoPOST)
     @PATCH(value="harmonogramEdit/{id}")
     suspend fun editHarmo(@Path("id") id: Int, @Body request : HarmoPOST)
-
+    @PATCH(value="updateTaskInfo/{id}")
+    suspend fun editTask(@Path("id") id: Int, @Body request : TaskEditPOST)
     @PATCH(value="updateFCM/{id}")
     suspend fun updateFCM(@Path("id") id: Int, @Body request : String)
 }

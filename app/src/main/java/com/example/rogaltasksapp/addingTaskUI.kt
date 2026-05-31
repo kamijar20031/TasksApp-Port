@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -64,6 +64,7 @@ fun convertMillisToDate(millis: Long): String {
 @Composable
 fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
 {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentTime = Calendar.getInstance()
     var selectExpanded by remember {mutableStateOf(false)}
     var selectedName by rememberSaveable {mutableStateOf("-")}
@@ -86,6 +87,7 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
     Scaffold(
         Modifier.fillMaxWidth(),
         bottomBar={DolnePrzyciski(nav)},
+        topBar = {InternetBar(uiState.internet)}
     )
     {
             padding ->
@@ -240,8 +242,16 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
             Spacer(Modifier.height(16.dp))
             Button(onClick={
                 scope.launch{
-                    val dane = AddTaskPOST(text,String.format("%s %02d:%02d", selectedDate, timePickerState.hour, timePickerState.minute, Locale.getDefault()), selectedID.toString())
-                    viewModel.addTask(dane)
+                    if (disableTime)
+                    {
+                        val dane = AddTaskPOST(text,"NULL", selectedID.toString())
+                        viewModel.addTask(dane)
+                    }
+                    else
+                    {
+                        val dane = AddTaskPOST(text,String.format("%s %02d:%02d", selectedDate, timePickerState.hour, timePickerState.minute, Locale.getDefault()), selectedID.toString())
+                        viewModel.addTask(dane)
+                    }
                     delay(400)
                     nav.navigate(Screen.Zadania.route)
                 }
