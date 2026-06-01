@@ -56,5 +56,6 @@ class DaoRepository @Inject constructor(
     suspend fun deleteAddition(ID:Int) = rogalDao.deleteAddition(ID)
     suspend fun getDeletion(ID:Int) = rogalDao.findDeletions(ID)
     suspend fun getAddition(ID:Int) = rogalDao.findAdditions(ID)
+    suspend fun editTask(ID:Int, data:String, nazwa:String) = rogalDao.editTask(ID, data, nazwa)
 
 }

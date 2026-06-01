@@ -39,7 +39,7 @@ class DAOMergeTasksUpdate @Inject constructor(private val tasksFinished: DAOMerg
                 }
                 else
                 {
-                    dao.addTask(online)
+                    dao.editTask(online.ID, online.data?: "", online.nazwa)
                     return online;
                 }
             }

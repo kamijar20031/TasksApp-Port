@@ -353,4 +353,19 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
         }
     }
 
+    fun editTask(ID : Int, request : TaskEditPOST)
+    {
+        viewModelScope.launch {
+            if (uiState.value.internet)
+            {
+                repository.editTask(ID, request)
+            }
+            else
+            {
+                daoRepo.editTask(ID, request.data?:"", request.nazwa)
+            }
+            getTasks("")
+        }
+    }
+
 }

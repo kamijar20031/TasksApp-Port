@@ -71,7 +71,7 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
     var selectedID by rememberSaveable {mutableStateOf(0)}
     var showDialog by remember { mutableStateOf(false) }
     var showDialogTime by remember { mutableStateOf(false) }
-    var disableTime by remember { mutableStateOf(false) }
+    var disableTime by remember { mutableStateOf(true) }
     var text by rememberSaveable {mutableStateOf("")}
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = currentTime.timeInMillis + 1000*60*60*24)
     var selectedDate = datePickerState.selectedDateMillis?.let {

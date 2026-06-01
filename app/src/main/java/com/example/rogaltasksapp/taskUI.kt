@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -175,106 +176,237 @@ fun Zadania(nav: NavHostController, viewModel : TaskViewModel)
                 horizontalAlignment = Alignment.CenterHorizontally,
             )
             {
+                Spacer(Modifier.height(12.dp))
                 Button(onClick = {nav.navigate(Screen.Random.route)})
                 {
-                    Text("Losuj zadania")
+                    Text("Losuj zadania", fontSize = 18.sp)
                 }
-                LazyColumn(Modifier.fillMaxWidth(0.8f), horizontalAlignment = Alignment.CenterHorizontally, contentPadding = PaddingValues(top = 12.dp))
+                Spacer(Modifier.height(12.dp))
+                var showNormal by remember {mutableStateOf(true)}
+                Card(
+                    Modifier.fillMaxWidth(0.9f),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF181818)
+                    )
+                )
                 {
-
-                    items(uiState.zadania, key={it.first.ID})
-                    { task ->
-                        if (task.first.parentID == 0) {
-                            var closed by rememberSaveable(task.first.ID) { mutableStateOf(true) }
-                            val children = task.second
-                            val hasChildren = children.isNotEmpty() && children[0].nazwa != null
-                            var edit by remember {mutableStateOf(false)}
-                            var deleting by remember {mutableStateOf(false)}
-                            AnimatedVisibility(
-                                visible = !deleting,
-                                enter = expandVertically() + fadeIn(),
-                                exit = shrinkVertically() + fadeOut()
-                            )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,)
+                    {
+                        Row(Modifier.fillMaxWidth(0.9f).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically)
+                        {
+                            Button(onClick = {showNormal = !showNormal})
                             {
-                                Card(
-                                    Modifier.fillMaxWidth(0.9f).animateContentSize(),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFFCE8321)
-                                    )
-                                )
-                                {
+                                if (showNormal) Icon(Icons.Default.KeyboardArrowUp, "")
+                                else Icon(Icons.Default.KeyboardArrowDown, "")
+                            }
+                            Text("Główne zadania" , fontSize = 20.sp, modifier=Modifier.padding(horizontal = 24.dp))
 
-                                    Column(modifier=Modifier.padding(8.dp))
-                                    {
-                                        DrawInfoRow(task.first.nazwa, task.first.data)
-                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center)
+                        }
+                        AnimatedVisibility(
+                            visible = showNormal,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        )
+                        {
+                            LazyColumn(Modifier.fillMaxWidth(0.9f).fillMaxHeight(0.8f), horizontalAlignment = Alignment.CenterHorizontally, contentPadding = PaddingValues(top = 12.dp))
+                            {
+
+                                items(uiState.zadania, key={it.first.ID})
+                                { task ->
+                                    if (task.first.parentID == 0 && (task.first.data != null || task.second.isNotEmpty())) {
+                                        var closed by rememberSaveable(task.first.ID) { mutableStateOf(true) }
+                                        val children = task.second
+                                        val hasChildren = children.isNotEmpty() && children[0].nazwa != null
+                                        var edit by remember {mutableStateOf(false)}
+                                        var deleting by remember {mutableStateOf(false)}
+                                        AnimatedVisibility(
+                                            visible = !deleting,
+                                            enter = expandVertically() + fadeIn(),
+                                            exit = shrinkVertically() + fadeOut()
+                                        )
                                         {
-                                            Button(
-                                                onClick = { edit=!edit },
-                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff634f23))
-                                            ) {
-                                                Icon(Icons.Default.Edit, "")
-                                            }
-                                            Spacer(modifier=Modifier.width(24.dp))
-                                            if (!hasChildren)
+                                            Card(
+                                                Modifier.fillMaxWidth(0.9f).animateContentSize(),
+                                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = Color(0xFFCE8321)
+                                                )
+                                            )
                                             {
-                                                if (!edit)
-                                                    Button(
-                                                        onClick = { deleting=true;viewModel.finishTask(task.first.ID) },
-                                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xff314836))
-                                                    ) {
-                                                        Icon(Icons.Default.Check, "")
+
+                                                Column(modifier=Modifier.padding(8.dp))
+                                                {
+                                                    DrawInfoRow(task.first.nazwa, task.first.data)
+                                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center)
+                                                    {
+                                                        Button(
+                                                            onClick = { edit=!edit },
+                                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xff634f23))
+                                                        ) {
+                                                            Icon(Icons.Default.Edit, "")
+                                                        }
+                                                        Spacer(modifier=Modifier.width(24.dp))
+                                                        if (!hasChildren)
+                                                        {
+                                                            if (!edit)
+                                                                Button(
+                                                                    onClick = { deleting=true;viewModel.finishTask(task.first.ID) },
+                                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xff314836))
+                                                                ) {
+                                                                    Icon(Icons.Default.Check, "")
+                                                                }
+                                                            else
+                                                                Button(
+                                                                    onClick = { deleting = true; viewModel.deleteTask(task.first.ID) },
+                                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xff4e2727))
+                                                                ) {
+                                                                    Icon(Icons.Default.Delete, "")
+                                                                }
+                                                        }
+                                                        else
+                                                            Button(
+                                                                onClick = { closed = !closed },
+                                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff000000))
+                                                            ) {
+                                                                Icon(
+                                                                    if (closed)                                                    Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp, "")
+                                                            }
+
                                                     }
-                                                else
-                                                    Button(
-                                                        onClick = { deleting = true; viewModel.deleteTask(task.first.ID) },
-                                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xff4e2727))
-                                                    ) {
-                                                        Icon(Icons.Default.Delete, "")
-                                                    }
-                                            }
-                                            else
-                                                Button(
-                                                    onClick = { closed = !closed },
-                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xff000000))
-                                                ) {
-                                                    Icon(
-                                                        if (closed)                                                    Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp, "")
                                                 }
 
+                                            }
                                         }
-                                    }
 
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                            if (hasChildren)
-                            {
-                                AnimatedVisibility(
-                                    visible = !closed,
-                                    enter = expandVertically() + fadeIn(),
-                                    exit = shrinkVertically() + fadeOut()
-                                ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(0.9f),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    )
-                                    {
-                                        children.forEach { child ->
-                                            key(child.ID){DrawElementChild(child, task.first.ID,viewModel)
-                                                Spacer(modifier = Modifier.height(16.dp))}
-                                        }
                                         Spacer(modifier = Modifier.height(16.dp))
+                                        if (hasChildren)
+                                        {
+                                            AnimatedVisibility(
+                                                visible = !closed,
+                                                enter = expandVertically() + fadeIn(),
+                                                exit = shrinkVertically() + fadeOut()
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.fillMaxWidth(0.9f),
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                )
+                                                {
+                                                    children.forEach { child ->
+                                                        key(child.ID){DrawElementChild(child, task.first.ID,viewModel)
+                                                            Spacer(modifier = Modifier.height(16.dp))}
+                                                    }
+                                                    Spacer(modifier = Modifier.height(16.dp))
+                                                }
+                                            }
+                                        }
+
                                     }
                                 }
-                            }
 
+                            }
                         }
                     }
 
                 }
+                Spacer(Modifier.height(12.dp))
+                Card(
+                    Modifier.fillMaxWidth(0.9f),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF181818)
+                    )
+                )
+                {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,)
+                    {
+                        Row(Modifier.fillMaxWidth(0.9f).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically)
+                        {
+                            Button(onClick = {showNormal = !showNormal})
+                            {
+                                if (!showNormal) Icon(Icons.Default.KeyboardArrowUp, "")
+                                else Icon(Icons.Default.KeyboardArrowDown, "")
+                            }
+                            Text("Zadania bez daty" , fontSize = 20.sp, modifier=Modifier.padding(horizontal = 24.dp))
+
+                        }
+                        AnimatedVisibility(
+                            visible = !showNormal,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        )
+                        {
+                            LazyColumn(Modifier.fillMaxWidth(0.9f).fillMaxHeight(0.9f), horizontalAlignment = Alignment.CenterHorizontally, contentPadding = PaddingValues(top = 12.dp))
+                            {
+
+                                items(uiState.zadania, key={it.first.ID})
+                                { task ->
+                                    if (task.first.parentID == 0 && (task.first.data == null && task.second.isEmpty())) {
+                                        var edit by remember {mutableStateOf(false)}
+                                        var deleting by remember {mutableStateOf(false)}
+                                        AnimatedVisibility(
+                                            visible = !deleting,
+                                            enter = expandVertically() + fadeIn(),
+                                            exit = shrinkVertically() + fadeOut()
+                                        )
+                                        {
+                                            Card(
+                                                Modifier.fillMaxWidth(0.9f).animateContentSize(),
+                                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = Color(0xFFCE8321)
+                                                )
+                                            )
+                                            {
+
+                                                Column(modifier=Modifier.padding(8.dp))
+                                                {
+                                                    DrawInfoRow(task.first.nazwa, task.first.data)
+                                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center)
+                                                    {
+                                                        Button(
+                                                            onClick = { edit=!edit },
+                                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xff634f23))
+                                                        ) {
+                                                            Icon(Icons.Default.Edit, "")
+                                                        }
+                                                        Spacer(modifier=Modifier.width(24.dp))
+                                                        if (!edit)
+                                                            Button(
+                                                                onClick = { deleting=true;viewModel.finishTask(task.first.ID) },
+                                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff314836))
+                                                            ) {
+                                                                Icon(Icons.Default.Check, "")
+                                                            }
+                                                        else
+                                                            Button(
+                                                                onClick = { deleting = true; viewModel.deleteTask(task.first.ID) },
+                                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff4e2727))
+                                                            ) {
+                                                                Icon(Icons.Default.Delete, "")
+                                                            }
+
+                                                    }
+                                                }
+
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+
+                }
+
             }
         else
             Box(contentAlignment = Alignment.Center,
