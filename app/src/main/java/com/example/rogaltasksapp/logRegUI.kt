@@ -63,7 +63,6 @@ fun Login(nav: NavHostController, viewModel : TaskViewModel)
             padding-> if (uiState.internet)
         Column(modifier = Modifier.padding(padding).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally)
         {
-            Text(uiState.internet.toString())
             Text("Zaloguj się", fontSize = 22.sp)
             Spacer(Modifier.height(24.dp))
             Text("Login", fontSize = 22.sp)
