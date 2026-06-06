@@ -6,31 +6,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import com.example.rogaltasksapp.ui.theme.RogalTasksAppTheme
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import android.Manifest
 import android.app.Application
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.Network
 import androidx.core.app.ActivityCompat
 import androidx.room.Room
 import dagger.Binds
@@ -65,7 +46,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(context, AppDatabase::class.java, "rogalOffline_db").addMigrations(MIGRATION_1_2).build()
+        return Room.databaseBuilder(context, AppDatabase::class.java, "rogalOffline_db").build()
     }
     @Provides
     @Singleton
@@ -87,7 +68,7 @@ object AppModule {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        requestNotificationPermissions()
         enableEdgeToEdge()
         setContent {
             RogalTasksAppTheme {
@@ -107,31 +88,6 @@ class MainActivity : ComponentActivity() {
             {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS),0)
             }
-        }
-    }
-}
-
-
-@Composable
-fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
-{
-    Scaffold(
-        Modifier.fillMaxWidth(),
-        bottomBar={DolnePrzyciski(nav)},
-    )
-    { padding ->
-        Column(
-            modifier = Modifier.padding(padding).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        )
-        {
-            Text("Ustawienia",  fontSize = 32.sp)
-            Spacer(Modifier.height(24.dp))
-            Button(onClick={
-                viewModel.logout()
-
-            })
-            {Text("Wyloguj się")}
         }
     }
 }

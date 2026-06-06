@@ -2,7 +2,6 @@ package com.example.rogaltasksapp
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
 import com.google.firebase.messaging.messaging
@@ -14,46 +13,66 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 
 data class UiState(
     val isLoading: Boolean = true,
     val isHarmoLoading: Boolean = true,
+    val areSettingsLoading: Boolean = true,
     val zadania: List<Pair<Task, List<Child>>> = emptyList(),
     var wpisyHarmo: List<Harmonogram> = emptyList(),
     val errors: String? = null,
     val info: String? = null,
     val ID: Int = 0,
-    val internet: Boolean = true
+    val internet: Boolean = true,
+    val zadaniaAll: List<ZadaniaEntity> = emptyList(),
+
+    val streak: Int = 0,
+    val maxStreak: Int = 0,
+    val days: Int = 1,
+    val daysW: Int =0,
+
+    val userName: String = "",
+    val ilePowiadomien: Int = 0
 )
 
 @HiltViewModel
-class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val settingsRepo: SettingsRepository, private val internetConnection: InternetConnection, val daoRepo: DaoRepository) : ViewModel()
+class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val settingsRepo: SettingsRepository, private val internetConnection: InternetConnection, val daoRepo: DaoRepository, private val mergeTasks: DAOMergeTasksUseCase, private val getStreak :  StatCountDayStreaks, private val getMaxStreak : StatMaxDayStreaks, private val getDays: StatDays, private val getWorkingDays : StatDaysWorked) : ViewModel()
 {
 
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
     private var pollingJob: Job? = null
+    private var prevNetState = true
 
     init {
 
         viewModelScope.launch{
-            internetConnection.connected.collect{
-                    value -> _uiState.update{it.copy(internet=value)}
+            internetConnection.connected.distinctUntilChanged().collect{
+                    value ->
+                    _uiState.update{it.copy(internet=value)}
+                    delay(20)
+                    if (!prevNetState && value) {
+                        updateDAO()
+                    }
+                    prevNetState=value
+
             }
         }
         viewModelScope.launch{
             settingsRepo.loginFlow.collect {id -> _uiState.update {it.copy(ID=id)}
                 if (id!=0)
                 {
-                    getTasks("any")
+                    getTasks()
                     getHarmo()
                     updateFCM(id)
                 }
@@ -64,7 +83,7 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
             while (isActive)
             {
                 if (uiState.value.ID!=0)
-                    getTasks("any")
+                    getTasks()
                 delay(5 * 60 * 1000L)
             }
 
@@ -80,8 +99,22 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
     {
         try
         {
-            val res = repository.getTasksBasic(uiState.value.ID)
-            daoRepo.syncTasks(res)
+            _uiState.update{it.copy(isLoading = true)}
+
+            val api = repository.getTasksBasic(uiState.value.ID)
+            val dao = daoRepo.getTasksRaw(uiState.value.ID)
+            mergeTasks(dao, api)
+            delay(200)
+            val results = daoRepo.getTasks(uiState.value.ID).map{ item-> val children = item.children
+                val ratio = if (children.isNotEmpty()){
+                    children.map {it.status}.average()
+                } else 0.0
+                Task( item.parent.ID, item.parent.nazwa, item.parent.data,"", ratio, item.parent.parentID) to children.map {
+                    Child(it.ID, it.data, it.nazwa, it.status)
+                }
+            }
+
+            _uiState.update{it.copy(isLoading = false, zadania=results)}
 
         }
         catch (e:Exception)
@@ -89,31 +122,22 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
             _uiState.update{it.copy(errors = "Błąd: ${e.message}")}
         }
     }
-    private suspend fun getTasks(data:String)
+    private suspend fun getTasks()
     {
-        _uiState.update{it.copy(isLoading = true)}
+
         if (_uiState.value.internet)
             try
             {
-                val gson = Gson()
-                val response = repository.getTasks(uiState.value.ID, data)
-                val tasks = response.map { task ->
-                    val childrenList: List<Child> =
-                        gson.fromJson(task.children, Array<Child>::class.java).toList()
-
-                    task to childrenList
-                }
+                getUserSettings()
                 updateDAO()
-
-                delay(500)
-                _uiState.update{it.copy(isLoading = false, zadania = tasks)}
             }
             catch(e: Exception)
             {
-                _uiState.update{it.copy(isLoading = false, errors = "Błąd: ${e.message}")}
+                _uiState.update{it.copy(errors = "Błąd: ${e.message}")}
             }
         else
         {
+            _uiState.update{it.copy(isLoading = true)}
             val results = daoRepo.getTasks(uiState.value.ID).map{ item-> val children = item.children
                 val ratio = if (children.isNotEmpty()){
                     children.map {it.status}.average()
@@ -131,14 +155,26 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
     {
         viewModelScope.launch {
             if (uiState.value.internet)
+            {
                 try {
                     val response = repository.addTask(uiState.value.ID, req)
                     delay(200)
-                    getTasks("any")
+                    getTasks()
 
                 } catch (e: Exception) {
                     Log.e("API", "Exception: ${e.message}")
                 }
+            }
+            else
+            {
+                var tempData : String? = req.dataTemp
+                if (tempData=="NULL") tempData = null
+                val temp = ZadaniaEntity(status = 0, uzytkownik = uiState.value.ID, nazwa=req.nazwa, data = tempData, parentID = req.rodzic.toInt(), lastModified = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.RFC_1123_DATE_TIME))
+                val ID = daoRepo.addTask(temp).toInt()
+                val temp1 = TaskAdditionEntity(affectedID = ID)
+                daoRepo.addAddition(temp1)
+                getTasks()
+            }
 
         }
     }
@@ -167,7 +203,14 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
     {
         viewModelScope.launch{
             try {
-                val response = repository.deleteTask(id)
+                if (uiState.value.internet)
+                    repository.deleteTask(id)
+                else
+                {
+                    daoRepo.deleteTask(id)
+                    daoRepo.addDeletion(TaskDeletionEntity(affectedID = id))
+                }
+
                 delay(200)
                 if (par!=0)
                     removeChildFromParentLocal(id, par)
@@ -183,7 +226,11 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
     {
         viewModelScope.launch{
             try {
-                val response = repository.finishTask(id)
+                if (uiState.value.internet)
+                    repository.finishTask(id)
+                else
+                    daoRepo.finishTask(id)
+
                 delay(200)
                 if (par!=0)
                     removeChildFromParentLocal(id, par)
@@ -206,7 +253,7 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
                 {
                     _uiState.update{state -> state.copy(ID = response.body()?.dane?:0)}
                     settingsRepo.setLogin(uiState.value.ID)
-                    getTasks( "any")
+                    getTasks()
                 }
                 else
                 {
@@ -229,9 +276,10 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
     fun logout()
     {
         viewModelScope.launch {
-            repository.updateFCM(_uiState.value.ID, "")
+            if (uiState.value.internet)
+                repository.updateFCM(_uiState.value.ID, "")
             _uiState.update { state -> state.copy(ID = 0) }
-            settingsRepo.setLogin(uiState.value.ID)
+            settingsRepo.setLogin(0)
         }
     }
 
@@ -245,7 +293,7 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
                 {
                     val responseLog = repository.login(post)
                     _uiState.update{state -> state.copy(ID = responseLog.body()?.dane?:0)}
-                    getTasks("any")
+                    getTasks()
                 }
                 else
                 {
@@ -276,28 +324,12 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
 
                     val response = repository.getHarmo(uiState.value.ID)
                     _uiState.update { state-> state.copy(wpisyHarmo = response.harmonogram) }
-                    try{
-                        daoRepo.syncHarmo(response.harmonogram)
-                    }
-                    catch(e1: Exception)
-                    {
-                        Log.e("DAOSync", "Exception: ${e1.message}")
-                    }
                 }
                 catch (e: Exception)
                 {
                     Log.e("HARMONOGRAM", "Exception: ${e.message}")
                 }
             }
-            else
-                try{
-                    val re = daoRepo.getHarmo(uiState.value.ID)
-                    _uiState.update { state-> state.copy(wpisyHarmo = re) }
-                }
-                catch (e: Exception)
-                {
-                    Log.e("DAO", "Exception: ${e.message}")
-                }
             _uiState.update{it.copy(isHarmoLoading = false)}
         }
     }
@@ -307,7 +339,7 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
         viewModelScope.launch{
             _uiState.update{it.copy(isHarmoLoading = true)}
             try{
-                val response = repository.addHarmo(uiState.value.ID, request)
+                repository.addHarmo(uiState.value.ID, request)
                 getHarmo()
             }
             catch (e: Exception)
@@ -322,7 +354,7 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
         viewModelScope.launch{
             _uiState.update{it.copy(isHarmoLoading = true)}
             try{
-                val response = repository.editHarmo(harmoID, request)
+                repository.editHarmo(harmoID, request)
                 getHarmo()
             }
             catch (e: Exception)
@@ -330,6 +362,59 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
                 Log.e("HARMONOGRAM", "Exception: ${e.message}")
             }
             _uiState.update{it.copy(isHarmoLoading = false)}
+        }
+    }
+
+    fun editTask(ID : Int, request : TaskEditPOST)
+    {
+        viewModelScope.launch {
+            if (uiState.value.internet)
+            {
+                repository.editTask(ID, request)
+            }
+            else
+            {
+                daoRepo.editTask(ID, request.data?:"", request.nazwa)
+            }
+            getTasks()
+        }
+    }
+
+    fun getUserSettings()
+    {
+        viewModelScope.launch {
+            if (uiState.value.internet)
+            {
+                val re = repository.getUserInfo(uiState.value.ID).dane[0]
+                _uiState.update { it.copy(ilePowiadomien = re.ilePowiadomien, userName = re.login) }
+            }
+        }
+    }
+
+    fun getTasksRawAll()
+    {
+        viewModelScope.launch {
+            var re : List<ZadaniaEntity>
+            re = if (uiState.value.internet) {
+                repository.getTasksBasic(uiState.value.ID)
+            } else {
+                daoRepo.getTasksRaw(uiState.value.ID)
+
+            }
+            val days = getDays(re)
+            val streak = getStreak(re)
+            val streakM = getMaxStreak(re)
+            val daysW = getWorkingDays(re)
+            _uiState.update{it.copy(zadaniaAll = re, streak = streak, maxStreak = streakM, days = days, daysW = daysW)}
+
+        }
+    }
+
+    fun changeUserData(req : UserPOST)
+    {
+        viewModelScope.launch{
+            repository.changeUserData(uiState.value.ID, req)
+            getUserSettings()
         }
     }
 

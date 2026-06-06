@@ -6,6 +6,14 @@ import androidx.room.TypeConverter
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
+
+fun dateToInt(date : String) : Long
+{
+    return ZonedDateTime.parse(date, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().epochSecond
+}
 
 
 class Converters {
@@ -45,6 +53,15 @@ data class TasksResponse(
     val zadania: List<Task>
 )
 
+data class UserInfo(
+    val ilePowiadomien : Int,
+    val login : String
+)
+
+data class UserResponse(
+    val dane : List<UserInfo>
+)
+
 @Serializable
 data class Day(
     val id: Int?,
@@ -63,9 +80,9 @@ data class dniD(
 
 
 data class AddTaskPOST(
-    val nazwa : String,
-    val dataTemp : String,
-    val rodzic : String
+    val nazwa: String,
+    val dataTemp: String?,
+    val rodzic: String
 )
 data class LoginPOST(
     val login : String,
@@ -76,7 +93,15 @@ data class HarmoPOST(
     val nazwa : String,
     val dniD : String,
 )
+data class TaskEditPOST(
+    val data: String?,
+    val nazwa: String,
+)
 
+data class UserPOST(
+    val what : String,
+    val value : String,
+)
 data class ResponseFromServer(
     val message: String? = null,
     val response : String? = null,
@@ -94,18 +119,28 @@ data class HarmonogramResponse(
 @Entity(tableName = "zadania")
 data class ZadaniaEntity(
     @PrimaryKey (autoGenerate = true)
-    val ID: Int,
+    val ID: Int=0,
     val status: Int,
     val uzytkownik: Int,
     val nazwa: String,
-    val data: String,
+    val data: String?,
     val parentID: Int,
     val lastModified: String,
 )
 
-@Entity(tableName = "harmonogram")
-data class Harmonogram(
+@Entity(tableName = "deletions")
+data class TaskDeletionEntity(
     @PrimaryKey (autoGenerate = true)
+    val ID: Int=0,
+    val affectedID: Int
+)
+@Entity(tableName = "additions")
+data class TaskAdditionEntity(
+    @PrimaryKey (autoGenerate = true)
+    val ID: Int=0,
+    val affectedID: Int
+)
+data class Harmonogram(
     val ID : Int,
     val nazwa : String,
     val dni : dniD? = null,

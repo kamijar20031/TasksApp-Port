@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.util.Log
 import androidx.core.content.getSystemService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
@@ -31,20 +32,12 @@ class InternetConnection @Inject constructor( @ApplicationContext private val co
                 override fun onAvailable(network: Network) {
                     super.onAvailable(network)
                     trySend(true)
+
                 }
 
                 override fun onLost(network: Network) {
                     super.onLost(network)
                     trySend(false)
-                }
-
-                override fun onCapabilitiesChanged(
-                    network: Network,
-                    networkCapabilities: NetworkCapabilities
-                ) {
-                    super.onCapabilitiesChanged(network, networkCapabilities)
-                    val connected = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-                    trySend(connected)
                 }
 
                 override fun onUnavailable() {

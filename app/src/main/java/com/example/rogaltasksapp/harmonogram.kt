@@ -1,14 +1,11 @@
 package com.example.rogaltasksapp
 
-import android.R
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,8 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -37,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
@@ -53,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -61,8 +56,6 @@ import androidx.navigation.NavHostController
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
-import java.time.LocalDate.parse
-import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -91,14 +84,14 @@ data class DniTygodnia(
 
 fun JSONifyDataAddWeeks(dniTygodnia :MutableList<DniTygodnia>, interval: Int) : String
 {
-    var temp = dniTygodnia.filter{it -> it.check};
+    val temp = dniTygodnia.filter{it.check}
     val days = JSONArray().apply{
             temp.forEach {
-                it -> put(JSONObject().apply{
+                put(JSONObject().apply{
                     put("id", it.id)
                     put("hour", it.hour )
                     put ("minute", it.minute)
-            });
+            })
             }
     }
     val json = JSONObject().apply{
@@ -151,10 +144,11 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
 
     Scaffold(
         Modifier.fillMaxWidth(),
-        bottomBar={DolnePrzyciski(nav)},
+        bottomBar={DolnePrzyciski(nav, viewModel)},
+        topBar = {InternetBar(uiState.internet)}
     )
     { padding ->
-        if (!uiState.isHarmoLoading)
+        if (!uiState.isHarmoLoading && uiState.internet)
         LazyColumn(
             modifier = Modifier.padding(padding).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -162,7 +156,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
         {
             // Podstawowy naglowek i wybor wpisu
             item {
-                Text("Harmonogram", fontSize = 22.sp)
+                Text("Harmonogram", fontSize = 28.sp)
                 ExposedDropdownMenuBox(
                     expanded = selectExpanded,
                     onExpandedChange = { selectExpanded = !selectExpanded }
@@ -234,7 +228,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                                         else
                                         {
                                             selected= options[1]
-                                            temp?.days?.forEach {it -> dniTygodnia[it.id?:0] =dniTygodnia[it.id?:0].copy(check = true,hour=it.hour?:12, minute=it.minute?:12)
+                                            temp?.days?.forEach {dniTygodnia[it.id?:0] =dniTygodnia[it.id?:0].copy(check = true,hour=it.hour?:12, minute=it.minute?:12)
                                                 }
                                         }
                                     }
@@ -538,13 +532,22 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
             }
 
         }
-        else
+        else if (uiState.internet)
         {
             Box(contentAlignment = Alignment.Center,
                 modifier = Modifier.padding(padding).fillMaxSize()
             )
             {
                 CircularProgressIndicator()
+            }
+        }
+        else
+        {
+            Box(contentAlignment = Alignment.Center,
+                modifier = Modifier.padding(padding).fillMaxSize()
+            )
+            {
+                Text("Harmonogram nie działa w trybie offline!", fontSize = 18.sp, textAlign = TextAlign.Center)
             }
         }
 

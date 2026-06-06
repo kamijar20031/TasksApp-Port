@@ -1,10 +1,10 @@
 package com.example.rogaltasksapp
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -33,6 +33,8 @@ sealed class Screen(val route: String)
     object Ustawienia: Screen("ustawienia")
     object Logowanie : Screen("login")
     object Rejestrowanie : Screen("register")
+    object Statystyki : Screen("statystyki")
+    object Random : Screen("randomTask")
 }
 
 sealed class NavigationScreens(
@@ -46,6 +48,9 @@ sealed class NavigationScreens(
     data object AddTask : NavigationScreens(Screen.AddZad.route, "", Icons.Default.Add)
     data object Harmonogram : NavigationScreens(Screen.Harmonogram.route, "Harmonogram",
         Icons.Default.DateRange
+    )
+    data object Statystyki : NavigationScreens(Screen.Statystyki.route, "Statystyki",
+        Icons.Default.QueryStats
     )
     data object Ustawienia : NavigationScreens(Screen.Ustawienia.route, "Ustawienia", Icons.Default.Settings
     )
@@ -112,15 +117,24 @@ fun MainNav(viewModel : TaskViewModel)
             {
                 Dodaj(navController, viewModel)
             }
+            composable(route = Screen.Random.route)
+            {
+                LosujScreen(navController, viewModel)
+            }
+            composable(route = Screen.Statystyki.route)
+            {
+                StatystykiScreen(navController, viewModel)
+            }
         }
     }
 }
 
 
 @Composable
-fun DolnePrzyciski(nav: NavHostController)
+fun DolnePrzyciski(nav: NavHostController, viewModel: TaskViewModel)
 {
     val screens = listOf(NavigationScreens.Zadania, NavigationScreens.Harmonogram,
+        NavigationScreens.Statystyki,
         NavigationScreens.Ustawienia)
     val nav1 by nav.currentBackStackEntryAsState()
     val crnt =nav1?.destination
@@ -137,7 +151,10 @@ fun DolnePrzyciski(nav: NavHostController)
             ),
             label = {Text(text=screen.title)},
             selected = crnt?.hierarchy?.any{it.route==screen.route}==true,
-            onClick = {nav.navigate(screen.route)},
+            onClick = {
+                if (screen.route =="statystyki")
+                    viewModel.getTasksRawAll()
+                nav.navigate(screen.route)},
             icon = { Icon(screen.icon, contentDescription = "") }
         )
         }

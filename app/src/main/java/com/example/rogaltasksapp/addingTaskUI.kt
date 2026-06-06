@@ -1,5 +1,6 @@
 package com.example.rogaltasksapp
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -18,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -60,20 +61,22 @@ fun convertMillisToDate(millis: Long): String {
     val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     return formatter.format(Date(millis))
 }
+@SuppressLint("DefaultLocale")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
 {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentTime = Calendar.getInstance()
     var selectExpanded by remember {mutableStateOf(false)}
     var selectedName by rememberSaveable {mutableStateOf("-")}
     var selectedID by rememberSaveable {mutableStateOf(0)}
     var showDialog by remember { mutableStateOf(false) }
     var showDialogTime by remember { mutableStateOf(false) }
-    var disableTime by remember { mutableStateOf(false) }
+    var disableTime by remember { mutableStateOf(true) }
     var text by rememberSaveable {mutableStateOf("")}
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = currentTime.timeInMillis + 1000*60*60*24)
-    var selectedDate = datePickerState.selectedDateMillis?.let {
+    val selectedDate = datePickerState.selectedDateMillis?.let {
         convertMillisToDate(it)
     } ?: ""
     val timePickerState = rememberTimePickerState(
@@ -81,11 +84,17 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
         initialMinute = 0,
         is24Hour = true,
     )
-    val rodzice = viewModel.uiState.collectAsState().value.zadania.filter{it -> it.first.parentID==0}
+    val rodzice = viewModel.uiState.collectAsState().value.zadania.filter{it.first.parentID==0}
     val scope = rememberCoroutineScope()
+
+    var nazwaError by remember {mutableStateOf(text.isBlank())}
+
+
+
     Scaffold(
         Modifier.fillMaxWidth(),
-        bottomBar={DolnePrzyciski(nav)},
+        bottomBar={DolnePrzyciski(nav, viewModel)},
+        topBar = {InternetBar(uiState.internet)}
     )
     {
             padding ->
@@ -93,6 +102,7 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
             modifier=Modifier.padding(padding).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
         )
         {
+            Spacer(Modifier.height(16.dp))
             Text("Nowe Zadanie",  fontSize = 32.sp)
             Spacer(Modifier.height(32.dp))
             Text("Nazwa", fontSize = 22.sp)
@@ -100,10 +110,11 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
             OutlinedTextField(
                 value = text,
                 placeholder = {Text("Nakarm psa")},
-                onValueChange = {text=it},
+                onValueChange = {text=it; nazwaError= text.isBlank()},
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedTextColor = Color(0xffeaeaea)
-                )
+                ),
+                isError = nazwaError
             )
             Spacer(Modifier.height(16.dp))
             Text("Czas", fontSize = 22.sp)
@@ -240,13 +251,22 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
             Spacer(Modifier.height(16.dp))
             Button(onClick={
                 scope.launch{
-                    val dane = AddTaskPOST(text,String.format("%s %02d:%02d", selectedDate, timePickerState.hour, timePickerState.minute, Locale.getDefault()), selectedID.toString())
-                    viewModel.addTask(dane)
+                    if (disableTime)
+                    {
+                        val dane = AddTaskPOST(text,"NULL", selectedID.toString())
+                        viewModel.addTask(dane)
+                    }
+                    else
+                    {
+                        val dane = AddTaskPOST(text,String.format("%s %02d:%02d", selectedDate, timePickerState.hour, timePickerState.minute, Locale.getDefault()), selectedID.toString())
+                        viewModel.addTask(dane)
+                    }
                     delay(400)
                     nav.navigate(Screen.Zadania.route)
                 }
 
-            },)
+            },
+                enabled = !nazwaError)
             {Text("Dodaj zadanie")}
         }
     }
