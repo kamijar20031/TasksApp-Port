@@ -40,8 +40,6 @@ interface RogalDao
     @Query("SELECT * FROM zadania WHERE uzytkownik=:ID")
     suspend fun getTasksRaw(ID:Int): List<ZadaniaEntity>
     @Upsert
-    suspend fun syncTasks(tasks: List<ZadaniaEntity>)
-    @Upsert
     suspend fun addTask(task: ZadaniaEntity) : Long
     @Query("UPDATE zadania SET status=100 WHERE ID= :ID")
     suspend fun finishTask(ID:Int)

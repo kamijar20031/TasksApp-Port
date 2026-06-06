@@ -148,7 +148,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
 
     Scaffold(
         Modifier.fillMaxWidth(),
-        bottomBar={DolnePrzyciski(nav)},
+        bottomBar={DolnePrzyciski(nav, viewModel)},
         topBar = {InternetBar(uiState.internet)}
     )
     { padding ->

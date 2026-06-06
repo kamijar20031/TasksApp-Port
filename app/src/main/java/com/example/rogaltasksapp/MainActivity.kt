@@ -112,30 +112,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-@Composable
-fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
-{
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Scaffold(
-        Modifier.fillMaxWidth(),
-        bottomBar={DolnePrzyciski(nav)},
-        topBar = {InternetBar(uiState.internet)}
-    )
-    { padding ->
-        Column(
-            modifier = Modifier.padding(padding).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        )
-        {
-            Text("Ustawienia",  fontSize = 32.sp)
-            Spacer(Modifier.height(24.dp))
-            Button(onClick={
-                viewModel.logout()
-
-            })
-            {Text("Wyloguj się")}
-        }
-    }
-}

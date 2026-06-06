@@ -38,4 +38,9 @@ interface ApiService
     suspend fun editTask(@Path("id") id: Int, @Body request : TaskEditPOST)
     @PATCH(value="updateFCM/{id}")
     suspend fun updateFCM(@Path("id") id: Int, @Body request : String)
+    @GET(value="userData/{id}")
+    suspend fun getUserData(@Path("id") id : Int) : UserResponse
+
+    @PATCH(value="userChange/{id}")
+    suspend fun changeUserData(@Path("id") id : Int, @Body request: UserPOST)
 }

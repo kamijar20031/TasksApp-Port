@@ -28,16 +28,26 @@ import java.time.format.DateTimeFormatter
 data class UiState(
     val isLoading: Boolean = true,
     val isHarmoLoading: Boolean = true,
+    val areSettingsLoading: Boolean = true,
     val zadania: List<Pair<Task, List<Child>>> = emptyList(),
     var wpisyHarmo: List<Harmonogram> = emptyList(),
     val errors: String? = null,
     val info: String? = null,
     val ID: Int = 0,
-    val internet: Boolean = true
+    val internet: Boolean = true,
+    val zadaniaAll: List<ZadaniaEntity> = emptyList(),
+
+    val streak: Int = 0,
+    val maxStreak: Int = 0,
+    val days: Int = 1,
+    val daysW: Int =0,
+
+    val userName: String = "",
+    val ilePowiadomien: Int = 0
 )
 
 @HiltViewModel
-class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val settingsRepo: SettingsRepository, private val internetConnection: InternetConnection, val daoRepo: DaoRepository, private val mergeTasks: DAOMergeTasksUseCase) : ViewModel()
+class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val settingsRepo: SettingsRepository, private val internetConnection: InternetConnection, val daoRepo: DaoRepository, private val mergeTasks: DAOMergeTasksUseCase, private val getStreak :  StatCountDayStreaks, private val getMaxStreak : StatMaxDayStreaks, private val getDays: StatDays, private val getWorkingDays : StatDaysWorked) : ViewModel()
 {
 
 
@@ -117,6 +127,7 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
         if (_uiState.value.internet)
             try
             {
+                getUserSettings()
                 updateDAO()
             }
             catch(e: Exception)
@@ -365,6 +376,47 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
                 daoRepo.editTask(ID, request.data?:"", request.nazwa)
             }
             getTasks("")
+        }
+    }
+
+    fun getUserSettings()
+    {
+        viewModelScope.launch {
+            if (uiState.value.internet)
+            {
+                val re = repository.getUserInfo(uiState.value.ID).dane[0]
+                _uiState.update { it.copy(ilePowiadomien = re.ilePowiadomien, userName = re.login) }
+            }
+        }
+    }
+
+    fun getTasksRawAll()
+    {
+        viewModelScope.launch {
+            var re : List<ZadaniaEntity> = emptyList()
+            if (uiState.value.internet)
+            {
+                re = repository.getTasksBasic(uiState.value.ID)
+            }
+            else
+            {
+                re = daoRepo.getTasksRaw(uiState.value.ID)
+
+            }
+            val days = getDays(re)
+            val streak = getStreak(re)
+            val streakM = getMaxStreak(re)
+            val daysW = getWorkingDays(re)
+            _uiState.update{it.copy(zadaniaAll = re, streak = streak, maxStreak = streakM, days = days, daysW = daysW)}
+
+        }
+    }
+
+    fun changeUserData(req : UserPOST)
+    {
+        viewModelScope.launch{
+            repository.changeUserData(uiState.value.ID, req)
+            getUserSettings()
         }
     }
 

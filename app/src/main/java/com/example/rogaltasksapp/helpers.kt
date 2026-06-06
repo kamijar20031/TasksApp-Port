@@ -53,6 +53,15 @@ data class TasksResponse(
     val zadania: List<Task>
 )
 
+data class UserInfo(
+    val ilePowiadomien : Int,
+    val login : String
+)
+
+data class UserResponse(
+    val dane : List<UserInfo>
+)
+
 @Serializable
 data class Day(
     val id: Int?,
@@ -87,6 +96,11 @@ data class HarmoPOST(
 data class TaskEditPOST(
     val data: String?,
     val nazwa: String,
+)
+
+data class UserPOST(
+    val what : String,
+    val value : String,
 )
 data class ResponseFromServer(
     val message: String? = null,

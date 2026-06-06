@@ -38,6 +38,8 @@ class ZadaniaRepository @Inject constructor(private val apiService: ApiService) 
     suspend fun editHarmo(id:Int, request: HarmoPOST) = apiService.editHarmo(id,request)
     suspend fun updateFCM(id: Int, request : String) = apiService.updateFCM(id, request)
     suspend fun editTask(id:Int, request: TaskEditPOST) = apiService.editTask(id, request)
+    suspend fun getUserInfo(id: Int) : UserResponse = apiService.getUserData(id)
+    suspend fun changeUserData(id:Int, req: UserPOST) = apiService.changeUserData(id, req)
 }
 
 

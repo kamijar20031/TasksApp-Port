@@ -56,7 +56,7 @@ fun LosujScreen(nav: NavHostController, viewModel : TaskViewModel)
     var error by remember {mutableStateOf("")}
     Scaffold(
         Modifier.fillMaxWidth(),
-        bottomBar={DolnePrzyciski(nav)},
+        bottomBar={DolnePrzyciski(nav, viewModel)},
         topBar = {InternetBar(uiState.internet)}
     )
     {

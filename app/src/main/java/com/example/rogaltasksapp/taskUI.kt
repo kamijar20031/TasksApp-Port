@@ -156,7 +156,7 @@ fun Zadania(nav: NavHostController, viewModel : TaskViewModel)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     Scaffold(
         Modifier.fillMaxWidth(),
-        bottomBar={DolnePrzyciski(nav)},
+        bottomBar={DolnePrzyciski(nav, viewModel)},
         floatingActionButtonPosition = FabPosition.End,
         floatingActionButton = {
             FloatingActionButton(
