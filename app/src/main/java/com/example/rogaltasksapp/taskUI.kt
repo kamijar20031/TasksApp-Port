@@ -39,7 +39,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -128,14 +127,14 @@ fun DrawElementChild(child: Child, parentID: Int, viewModel: TaskViewModel)
                     Spacer(modifier=Modifier.width(24.dp))
                     if (edit)
                         Button(
-                            onClick = { deleting = true; viewModel.deleteTask(child.ID, par=parentID) },
+                            onClick = { viewModel.deleteTask(child.ID, par=parentID) },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xff4e2727))
                         ) {
                             Icon(Icons.Default.Delete, "")
                         }
                     else
                         Button(
-                            onClick = { deleting = true; viewModel.finishTask(child.ID, par=parentID) },
+                            onClick = { viewModel.finishTask(child.ID, par=parentID) },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xff314836))
                         ) {
                             Icon(Icons.Default.Check, "")
@@ -163,7 +162,7 @@ fun Zadania(nav: NavHostController, viewModel : TaskViewModel)
                 onClick = { nav.navigate(NavigationScreens.AddTask.route) },
             )
             {
-                Icon(NavigationScreens.AddTask.icon, contentDescription = "",)
+                Icon(NavigationScreens.AddTask.icon, contentDescription = "")
             }
         },
         topBar = {InternetBar(uiState.internet)}

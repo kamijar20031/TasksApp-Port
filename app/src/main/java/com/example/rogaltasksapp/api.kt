@@ -1,10 +1,6 @@
 package com.example.rogaltasksapp
 
-import androidx.room.Entity
-import kotlinx.serialization.Serializable
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -43,4 +39,7 @@ interface ApiService
 
     @PATCH(value="userChange/{id}")
     suspend fun changeUserData(@Path("id") id : Int, @Body request: UserPOST)
+
+    @POST(value="noweZadanieDone/{id}")
+    suspend fun addTaskDone(@Path("id") id: Int, @Body request : AddTaskPOST) : Response<ResponseFromServer>
 }

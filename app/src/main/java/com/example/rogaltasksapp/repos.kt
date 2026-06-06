@@ -8,9 +8,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import retrofit2.http.Body
-import retrofit2.http.PATCH
-import retrofit2.http.Path
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_pref")
 object UserPrefsKeys {val ID = intPreferencesKey("login")}
@@ -27,7 +24,6 @@ class SettingsRepository @Inject constructor (@ApplicationContext private val co
 
 class ZadaniaRepository @Inject constructor(private val apiService: ApiService) {
     suspend fun getTasksBasic(id:Int): List<ZadaniaEntity> = apiService.getTasksBasic(id).zadania
-    suspend fun getTasks(id:Int,data:String): List<Task> = apiService.getTasks(id).zadania
     suspend fun addTask(id:Int, req : AddTaskPOST) = apiService.addTask(id, req)
     suspend fun deleteTask(id:Int) = apiService.deleteTask(id)
     suspend fun finishTask(id:Int) = apiService.finishTask(id)
@@ -40,6 +36,8 @@ class ZadaniaRepository @Inject constructor(private val apiService: ApiService) 
     suspend fun editTask(id:Int, request: TaskEditPOST) = apiService.editTask(id, request)
     suspend fun getUserInfo(id: Int) : UserResponse = apiService.getUserData(id)
     suspend fun changeUserData(id:Int, req: UserPOST) = apiService.changeUserData(id, req)
+
+    suspend fun addTaskDone(id:Int, req : AddTaskPOST) = apiService.addTaskDone(id, req)
 }
 
 

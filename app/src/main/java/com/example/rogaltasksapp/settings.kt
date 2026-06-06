@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +50,7 @@ fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
             horizontalAlignment = Alignment.CenterHorizontally
         )
         {
+            Spacer(Modifier.height(16.dp))
             Text("Ustawienia",  fontSize = 32.sp)
             Spacer(Modifier.height(24.dp))
             Button(onClick={
@@ -72,6 +74,7 @@ fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
                         var showPassword by remember {mutableStateOf(false)}
                         var password by remember {mutableStateOf("")}
                         var notifications by remember {mutableStateOf(viewModel.uiState.value.ilePowiadomien.toString())}
+
                         Text("Zaawansowane",  fontSize = 24.sp)
                         Spacer(Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(10.dp))
@@ -152,7 +155,7 @@ fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
                     }
                     else
                     {
-                        Text("Reszta ustawień jest dostępna tylko w trybie online",  fontSize = 24.sp)
+                        Text("Reszta ustawień jest dostępna tylko w trybie online",  fontSize = 24.sp, textAlign = TextAlign.Center)
 
                     }
                 }

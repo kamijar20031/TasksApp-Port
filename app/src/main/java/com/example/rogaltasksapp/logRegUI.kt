@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,14 +36,14 @@ import com.example.rogaltasksapp.ui.theme.ErrorCol
 
 fun checkVals(login:String,  haslo:String) : String
 {
-    if (login=="" && haslo=="")
-        return "Wpisz login i hasło"
+    return if (login=="" && haslo=="")
+        "Wpisz login i hasło"
     else if (login=="")
-        return "Wpisz login"
+        "Wpisz login"
     else if (haslo=="")
-        return "Wpisz hasło"
+        "Wpisz hasło"
     else
-        return ""
+        ""
 }
 
 
@@ -63,7 +62,6 @@ fun Login(nav: NavHostController, viewModel : TaskViewModel)
             padding-> if (uiState.internet)
         Column(modifier = Modifier.padding(padding).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally)
         {
-            Text(uiState.internet.toString())
             Text("Zaloguj się", fontSize = 22.sp)
             Spacer(Modifier.height(24.dp))
             Text("Login", fontSize = 22.sp)

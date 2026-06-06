@@ -2,20 +2,13 @@ package com.example.rogaltasksapp
 
 import androidx.room.Dao
 import androidx.room.Database
-import androidx.room.Delete
 import androidx.room.Embedded
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
 import androidx.room.TypeConverters
 import androidx.room.Upsert
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
-import kotlinx.coroutines.flow.Flow
-import kotlinx.serialization.Serializable
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -59,6 +52,8 @@ interface RogalDao
     suspend fun findAdditions(ID:Int) : List<TaskAdditionEntity>
     @Query("UPDATE zadania SET data=:data, nazwa=:nazwa, lastModified=:lastModified  WHERE ID= :ID")
     suspend fun editTask(ID:Int, data:String, nazwa:String, lastModified:String= ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.RFC_1123_DATE_TIME))
+
+
 }
 
 @Database(entities = [ZadaniaEntity::class, TaskDeletionEntity::class, TaskAdditionEntity::class], version = 1)

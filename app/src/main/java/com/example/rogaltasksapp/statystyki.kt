@@ -24,19 +24,18 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.Instant
 import java.time.ZoneId
-import kotlin.time.Duration.Companion.days
 
 class StatCountDayStreaks @Inject constructor()
 {
     operator fun invoke(zadania: List<ZadaniaEntity>): Int
     {
-        var max = 0;
-        val zads = zadania.filter{it -> it.status==100}.map{it -> dateToInt(it.lastModified)}.sortedDescending()
+        var max = 0
+        val zads = zadania.filter{ it.status==100}.map{ dateToInt(it.lastModified)}.sortedDescending()
         if (zads.isNotEmpty())
         {
-            var i =0;
+            var i =0
             var day1 = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate()
-            var start = true;
+            var start = true
             var day2 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
             while (i<zads.size && (day1==day2 || day1==day2.plusDays(1)))
             {
@@ -44,17 +43,17 @@ class StatCountDayStreaks @Inject constructor()
                 {
                     if (!start) max++
 
-                };
+                }
                 if (start)
-                    start = false;
+                    start = false
                 day1 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
                 i++
                 if (i<zads.size) day2 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
             }
             if (!start)
-                max++;
+                max++
         }
-        return max;
+        return max
     }
 }
 
@@ -62,15 +61,15 @@ class StatMaxDayStreaks @Inject constructor()
 {
     operator fun invoke(zadania: List<ZadaniaEntity>): Int
     {
-        var maxM = 0;
-        var max = 0;
-        val zads = zadania.filter{it -> it.status==100}.map{it -> dateToInt(it.lastModified)}.sortedDescending()
+        var maxM = 0
+        var max = 0
+        val zads = zadania.filter{ it.status==100}.map{ dateToInt(it.lastModified)}.sortedDescending()
         if (zads.isNotEmpty())
         {
             var day1 = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate()
-            var i =0;
+            var i =0
             var day2 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
-            var start = true;
+            var start = true
 
             while (i< zads.size)
             {
@@ -80,9 +79,9 @@ class StatMaxDayStreaks @Inject constructor()
                     {
                         if (!start) max++
 
-                    };
+                    }
                     if (start)
-                        start = false;
+                        start = false
                     day1 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
                     i++
                     if (i<zads.size)
@@ -95,10 +94,10 @@ class StatMaxDayStreaks @Inject constructor()
                     day2 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
                 if (!start) max++
                 if (max>maxM)  maxM = max
-                max = 0;
+                max = 0
             }
         }
-        return maxM;
+        return maxM
     }
 }
 
@@ -106,16 +105,16 @@ class StatDays @Inject constructor()
 {
     operator fun invoke(zadania: List<ZadaniaEntity>): Int
     {
-        var range = 1;
-        val zads = zadania.map{it -> dateToInt(it.lastModified)}.sortedDescending()
+        var range = 1
+        val zads = zadania.map{ dateToInt(it.lastModified)}.sortedDescending()
         if (zads.isNotEmpty())
         {
-            var day1 = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate()
-            var i =zads.size-1;
-            var day2 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
+            val day1 = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate()
+            val i =zads.size-1
+            val day2 = Instant.ofEpochSecond(zads[i]) .atZone(ZoneId.systemDefault()) .toLocalDate()
             range = (day1.toEpochDay()-day2.toEpochDay()).toInt()
         }
-        return range;
+        return range
     }
 }
 
@@ -123,10 +122,11 @@ class StatDaysWorked @Inject constructor()
 {
     operator fun invoke(zadania: List<ZadaniaEntity>): Int
     {
-        val doneZads = zadania.filter{it.status==100}.map{it ->         Instant.ofEpochSecond(dateToInt(it.lastModified))
+        val doneZads = zadania.filter{it.status==100}.map{
+            Instant.ofEpochSecond(dateToInt(it.lastModified))
             .atZone(ZoneId.systemDefault())
             .toLocalDate()}.distinct()
-        return doneZads.size;
+        return doneZads.size
     }
 }
 
@@ -143,6 +143,7 @@ fun StatystykiScreen(nav: NavHostController, viewModel : TaskViewModel)
         padding ->
         Column(Modifier.fillMaxWidth().padding(padding), horizontalAlignment = Alignment.CenterHorizontally)
         {
+            Spacer(Modifier.height(16.dp))
             Text("Statystyki", fontSize = 28.sp)
             Spacer(Modifier.height(32.dp))
             Card(

@@ -38,15 +38,13 @@ import java.time.DayOfWeek
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjuster
 import java.time.temporal.TemporalAdjusters
-import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LosujScreen(nav: NavHostController, viewModel : TaskViewModel)
 {
-    var names = listOf("Do końca dnia", "Do końca tygodnia")
+    val names = listOf("Do końca dnia", "Do końca tygodnia")
     var selectExpanded by remember {mutableStateOf(false)}
     var selectedName by remember {mutableStateOf(names[0])}
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -63,6 +61,7 @@ fun LosujScreen(nav: NavHostController, viewModel : TaskViewModel)
         paddingValues ->
         Column(Modifier.padding(paddingValues).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally)
         {
+            Spacer(Modifier.height(16.dp))
             Text("Wylosuj zadanie", fontSize= 22.sp)
             Spacer(Modifier.height(16.dp))
             ExposedDropdownMenuBox(expanded = selectExpanded, onExpandedChange = {selectExpanded = !selectExpanded})
@@ -140,7 +139,7 @@ fun LosujScreen(nav: NavHostController, viewModel : TaskViewModel)
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                selected!!.nazwa?: "",
+                                selected!!.nazwa,
                                 fontSize = 20.sp,
                                 textAlign = TextAlign.Center,
                                 color = Color(0xffffffde)

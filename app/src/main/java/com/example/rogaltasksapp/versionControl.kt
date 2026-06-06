@@ -1,6 +1,7 @@
 package com.example.rogaltasksapp
 import android.util.Log
 import jakarta.inject.Inject
+import kotlinx.coroutines.delay
 
 data class TaskPair(var temp: ZadaniaEntity? = null, var second: ZadaniaEntity? = null)
 
@@ -11,14 +12,14 @@ class DAOMergeTasksFinished @Inject constructor(val dao: DaoRepository,  val api
         if (offline.status==100)
         {
             api.finishTask(offline.ID)
-            return true;
+            return true
         }
         else if (online.status==100)
         {
             dao.finishTask(offline.ID)
-            return true;
+            return true
         }
-        else return false;
+        else return false
 
     }
 }
@@ -35,22 +36,22 @@ class DAOMergeTasksUpdate @Inject constructor(private val tasksFinished: DAOMerg
                 {
                     val temp = TaskEditPOST(offline.data, offline.nazwa)
                     api.editTask(offline.ID,temp)
-                    return offline;
+                    return offline
                 }
                 else
                 {
                     dao.editTask(online.ID, online.data?: "", online.nazwa)
-                    return online;
+                    return online
                 }
             }
             else
             {
-                return offline;
+                return offline
             }
         }
         else
         {
-            return ZadaniaEntity(online.ID, 100, online.uzytkownik, online.nazwa, online.data, online.parentID, online.lastModified);
+            return ZadaniaEntity(online.ID, 100, online.uzytkownik, online.nazwa, online.data, online.parentID, online.lastModified)
         }
 
 
@@ -79,11 +80,12 @@ class DAOMergeTasksUseCase @Inject constructor(private val mergeCase : DAOMergeT
 {
     suspend operator fun invoke(offline:  List<ZadaniaEntity>, online:   List<ZadaniaEntity>) : List<ZadaniaEntity>
     {
-        var taskMap = mutableMapOf<Int, TaskPair>()
-        offline.forEach { it -> taskMap[it.ID] = TaskPair(it) }
-        online.forEach { it-> if (taskMap[it.ID] !=null) {
+        val taskMap = mutableMapOf<Int, TaskPair>()
+        offline.forEach { taskMap[it.ID] = TaskPair(it) }
+        online.forEach {
+            if (taskMap[it.ID] !=null) {
             try {
-                taskMap[it.ID]!!.second=mergeCase(taskMap[it.ID]!!.temp!!, it);
+                taskMap[it.ID]!!.second=mergeCase(taskMap[it.ID]!!.temp!!, it)
             }
             catch(e: Exception)
             {
@@ -121,9 +123,17 @@ class DAOMergeTasksUseCase @Inject constructor(private val mergeCase : DAOMergeT
             if (addCase(key))
             {
                 try {
-                    val tempo = AddTaskPOST(it.temp!!.nazwa, it.temp!!.data, it.temp!!.parentID.toString())
+
+                    val tempo = AddTaskPOST(it.temp!!.nazwa, it.temp!!.data?:"NULL", it.temp!!.parentID.toString())
                     it.second = it.temp
-                    api.addTask(it.temp!!.uzytkownik, tempo)
+                    if (it.temp!!.status==100)
+                    {
+                        api.addTaskDone(it.temp!!.uzytkownik, tempo)
+                    }
+                    else
+                    {
+                        api.addTask(it.temp!!.uzytkownik, tempo)
+                    }
                     dao.deleteAddition(key)
                 }
                 catch(e: Exception)
