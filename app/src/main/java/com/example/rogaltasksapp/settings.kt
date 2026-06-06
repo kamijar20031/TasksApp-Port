@@ -79,30 +79,33 @@ fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
                         Spacer(Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(10.dp))
                         {
+                            var nazwaError by remember {mutableStateOf(false)}
                             OutlinedTextField(
                                 modifier = Modifier.weight(1f),
                                 value = userName,
                                 label = {Text("Nazwa użytkownika")},
-                                onValueChange = {userName=it},
+                                onValueChange = {userName=it; nazwaError=it.isEmpty()},
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedTextColor = Color(0xffeaeaea)
-                                )
+                                ),
+                                isError = nazwaError
                             )
                             Spacer(Modifier.width(24.dp))
                             Button(onClick={
                                 viewModel.changeUserData(UserPOST("login", userName))
 
-                            })
+                            }, enabled = !nazwaError)
                             {Text("Zmień")}
                         }
                         Spacer(Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(10.dp))
                         {
+                            var passwordError by remember {mutableStateOf(true)}
                             OutlinedTextField(
                                 modifier = Modifier.weight(1f),
                                 label = {Text("Hasło")},
                                 value = password,
-                                onValueChange = {password=it;},
+                                onValueChange = {password=it; passwordError=it.isEmpty()},
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedTextColor = Color(0xffeaeaea)
                                 ),
@@ -120,36 +123,38 @@ fun Ustawienia(nav: NavHostController, viewModel : TaskViewModel)
                                         )
                                     }
                                 },
+                                isError = passwordError
                             )
 
                             Spacer(Modifier.width(24.dp))
                             Button(onClick={
                                 viewModel.changeUserData(UserPOST("haslo", password))
 
-                            })
+                            }, enabled = !passwordError)
                             {Text("Zmień")}
                         }
                         Spacer(Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(10.dp))
                         {
+                            var notError by remember {mutableStateOf(false)}
                             OutlinedTextField(
                                 modifier = Modifier.weight(1f),
                                 value = notifications,
                                 label = {Text("Ilość powiadomień")},
                                 onValueChange = {
-
+                                    notifications.isBlank() || notifications.toIntOrNull() == null
                                     notifications=it
                                                 },
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedTextColor = Color(0xffeaeaea)
                                 ),
-                                isError = notifications.isBlank() || notifications.toIntOrNull() == null
+                                isError = notError
                             )
                             Spacer(Modifier.width(24.dp))
                             Button(onClick={
                                 viewModel.changeUserData(UserPOST("ilePowiadomien", notifications))
 
-                            })
+                            }, enabled=!notError)
                             {Text("Zmień")}
                         }
                     }

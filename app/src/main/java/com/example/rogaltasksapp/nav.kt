@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -149,7 +150,7 @@ fun DolnePrzyciski(nav: NavHostController, viewModel: TaskViewModel)
                 unselectedTextColor = Color(0xFF808080),
                 indicatorColor = Color(0x22edd83b)
             ),
-            label = {Text(text=screen.title)},
+            label = {Text(text=screen.title, fontSize=10.sp)},
             selected = crnt?.hierarchy?.any{it.route==screen.route}==true,
             onClick = {
                 if (screen.route =="statystyki")

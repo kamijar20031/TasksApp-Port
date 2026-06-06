@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.example.rogaltasksapp.ui.theme.ErrorCol
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
@@ -142,6 +143,9 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
         is24Hour = true,
     )
 
+    var nazwaError by remember {mutableStateOf(newName.isBlank())}
+    var intervalError by remember{mutableStateOf(intervalSelect.isBlank() || intervalSelect.toIntOrNull() == null)}
+    var weeksError by remember {mutableStateOf(false)}
     Scaffold(
         Modifier.fillMaxWidth(),
         bottomBar={DolnePrzyciski(nav, viewModel)},
@@ -241,34 +245,30 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
             }
             // Podnaglowek w zaleznosci od wybranego trybu wpisu + wspolne wybory dla kazdego z nich
             item {
+                Spacer(Modifier.height(16.dp))
                 if (selectedID==0)
                 {
-                    Spacer(Modifier.height(16.dp))
+
                     Text("Nowy wpis", fontSize = 22.sp)
-                    Spacer(Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = newName,
-                        label = {Text("Nazwa wpisu")},
-                        onValueChange = {newName=it},
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedTextColor = Color(0xffeaeaea)
-                        )
-                    )
+
                 }
                 else
                 {
-                    Spacer(Modifier.height(16.dp))
                     Text("Edytuj wpis", fontSize = 22.sp)
-                    Spacer(Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = if (newName=="") selectedName else newName,
-                        label = {Text("Zmień nazwe")},
-                        onValueChange = {newName=it},
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedTextColor = Color(0xffeaeaea)
-                        )
-                    )
+                    newName = selectedName
+                    nazwaError = newName.isEmpty()
+
                 }
+                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = newName,
+                    label = {Text("Zmień nazwe")},
+                    onValueChange = {newName=it; nazwaError = it.isEmpty()},
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedTextColor = Color(0xffeaeaea)
+                    ),
+                    isError = nazwaError
+                )
                 Spacer(Modifier.height(16.dp))
                 ExposedDropdownMenuBox(
                     expanded = selectExpanded1,
@@ -308,11 +308,11 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                 OutlinedTextField(
                     value = intervalSelect,
                     label = {Text("Odstep")},
-                    onValueChange = {intervalSelect=it},
+                    onValueChange = {intervalSelect=it; intervalError = intervalSelect.isBlank() || intervalSelect.toIntOrNull() == null},
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedTextColor = Color(0xffeaeaea)
                     ),
-                    isError = intervalSelect.isBlank() || intervalSelect.toIntOrNull() == null
+                    isError = intervalError
                 )
             }
             // Wybor godziny i startu dla odstepow dniowych
@@ -419,6 +419,14 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                         horizontalAlignment = Alignment.CenterHorizontally)
                     {
                         Text("Dni tygodnia", fontSize = 22.sp)
+                        if (dniTygodnia.filter { it.check == true }.isEmpty())
+                        {
+                            Spacer(Modifier.height(12.dp))
+                            weeksError = true
+                            Text("Wybierz przynajmniej jeden dzień tygodnia", color= ErrorCol, fontSize=12.sp)
+                            Spacer(Modifier.height(12.dp))
+                        }
+                        else weeksError = false;
                         dniTygodnia.forEach{item ->  Row(modifier = Modifier
                                 .fillMaxWidth(0.5f)
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
@@ -506,7 +514,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                         else json = JSONifyDataAddWeeks(dniTygodnia, intervalSelect.toInt())
                         viewModel.addHarmo(request= HarmoPOST(nazwa = newName, dniD=json))
                         nav.navigate(Screen.Zadania.route)
-                    })
+                    }, enabled = !nazwaError && (!weeksError || selected==options[0]) && !intervalError)
                     {
                         Text("Dodaj")
                     }
@@ -523,7 +531,7 @@ fun Harmonogram(nav: NavHostController, viewModel : TaskViewModel)
                         viewModel.editHarmo(request= HarmoPOST(nazwa = if (newName=="") selectedName else newName, dniD=json), harmoID = selectedID)
                         nav.navigate(Screen.Zadania.route)
 
-                    })
+                    }, enabled = !nazwaError && (!weeksError || selected==options[0]) && !intervalError)
                     {
                         Text("Edytuj")
                     }
