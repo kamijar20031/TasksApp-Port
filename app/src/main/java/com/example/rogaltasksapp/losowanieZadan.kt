@@ -91,7 +91,7 @@ fun LosujScreen(nav: NavHostController, viewModel : TaskViewModel)
             }
             Spacer(Modifier.height(16.dp))
             Button(onClick = {
-                val ukryte = viewModel.uiState.value.zadania.filter{it.second.isEmpty() && it.first.data==null}.map{it.first}
+                val ukryte = viewModel.uiState.value.zadania.filter{it.second.isEmpty() && it.first.data==null}.map{it.first} + viewModel.uiState.value.zadania.map{it.second}.flatten().filter{it.data==null}.map{ Task(it.ID, it.nazwa?:"", it.data, "", 0.0,0) }
                 if (ukryte.size>0)
                 {
                     selected = ukryte.random()

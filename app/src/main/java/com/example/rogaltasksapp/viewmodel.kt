@@ -111,7 +111,7 @@ class TaskViewModel @Inject constructor(val repository: ZadaniaRepository, val s
                 } else 0.0
                 Task( item.parent.ID, item.parent.nazwa, item.parent.data,"", ratio, item.parent.parentID) to children.map {
                     Child(it.ID, it.data, it.nazwa, it.status)
-                }
+                }.filter{it.status!=100}
             }
 
             _uiState.update{it.copy(isLoading = false, zadania=results)}

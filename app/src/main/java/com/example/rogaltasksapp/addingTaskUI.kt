@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -98,176 +99,184 @@ fun Dodaj(nav: NavHostController, viewModel : TaskViewModel)
     )
     {
             padding ->
-        Column(
+        LazyColumn(
             modifier=Modifier.padding(padding).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
         )
         {
-            Spacer(Modifier.height(16.dp))
-            Text("Nowe Zadanie",  fontSize = 32.sp)
-            Spacer(Modifier.height(32.dp))
-            Text("Nazwa", fontSize = 22.sp)
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = text,
-                placeholder = {Text("Nakarm psa")},
-                onValueChange = {text=it; nazwaError= text.isBlank()},
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedTextColor = Color(0xffeaeaea)
-                ),
-                isError = nazwaError
-            )
-            Spacer(Modifier.height(16.dp))
-            Text("Czas", fontSize = 22.sp)
-            Spacer(Modifier.height(16.dp))
-            Checkbox(
-                checked = !disableTime,
-                onCheckedChange = { disableTime = !it }
-            )
-            AnimatedVisibility(
-                visible = !disableTime,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            )
-            {
-                Column(
-                    Modifier.padding(horizontal = 78.dp).border(1.dp, Color(0xff303030), shape = RoundedCornerShape(16.dp)).padding(start=30.dp, end=30.dp, top=18.dp, bottom=36.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally)
-                {
-                    Text("Data", fontSize = 16.sp)
-                    Box() {
-                        OutlinedTextField(
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedTextColor = Color(0xffeaeaea)
-                            ),
-                            value = selectedDate,
-                            onValueChange = { },
-                            readOnly = true,
-                            trailingIcon = {
-                                IconButton(onClick = { showDialog = !showDialog }) {
-                                    Icon(
-                                        imageVector = Icons.Default.DateRange,
-                                        contentDescription = "Select date"
-                                    )
-                                }
-                            },
-                        )
-
-                        if (showDialog) {
-                            Popup(
-                                onDismissRequest = { showDialog = false },
-                                alignment = Alignment.TopStart
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .offset(y = 64.dp)
-                                        .padding(16.dp)
-                                ) {
-                                    DatePicker(
-                                        state = datePickerState,
-                                        showModeToggle = false
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Text("Godzina", fontSize = 16.sp)
-                    Box() {
-                        OutlinedTextField(
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedTextColor = Color(0xffeaeaea)
-                            ),
-                            value = String.format(Locale.getDefault(), "%02d:%02d", timePickerState.hour,timePickerState.minute),
-                            onValueChange = { },
-                            readOnly = true,
-                            trailingIcon = {
-                                IconButton(onClick = { showDialogTime = !showDialogTime }) {
-                                    Icon(
-                                        imageVector = Icons.Default.DateRange,
-                                        contentDescription = "Select date"
-                                    )
-                                }
-                            },
-                        )
-
-                        if (showDialogTime) {
-                            Popup(
-                                onDismissRequest = { showDialogTime = false },
-                                alignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(Color(0xfd303030), shape= RoundedCornerShape(16.dp))
-                                        .padding(16.dp)
-                                ) {
-
-                                    TimePicker(
-                                        state = timePickerState,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            Spacer(Modifier.height(16.dp))
-            Text("Rodzic", fontSize = 22.sp)
-            ExposedDropdownMenuBox(
-                expanded = selectExpanded,
-                onExpandedChange = { selectExpanded = !selectExpanded }
-            ) {
+            item {
+                Spacer(Modifier.height(16.dp))
+                Text("Nowe Zadanie",  fontSize = 32.sp)
+                Spacer(Modifier.height(32.dp))
+                Text("Nazwa", fontSize = 22.sp)
+                Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
-                    value = selectedName,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Wybierz opcję") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = selectExpanded)
-                    },
-                    modifier = Modifier.menuAnchor(),
+                    value = text,
+                    placeholder = {Text("Nakarm psa")},
+                    onValueChange = {text=it; nazwaError= text.isBlank()},
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedTextColor = Color(0xffeaeaea),
+                        unfocusedTextColor = Color(0xffeaeaea)
                     ),
+                    isError = nazwaError
                 )
-
-                ExposedDropdownMenu(
-                    expanded = selectExpanded,
-                    onDismissRequest = { selectExpanded = false }
-                ) {
-                    rodzice.forEach { item ->
-                        DropdownMenuItem(
-                            text = { Text(item.first.nazwa) },
-                            onClick = {
-                                selectedName = item.first.nazwa
-                                selectedID = item.first.ID
-                                selectExpanded = false
-                            }
-                        )
-                    }
-                }
             }
-            Spacer(Modifier.height(16.dp))
-            Button(onClick={
-                scope.launch{
-                    if (disableTime)
+            item{
+                Spacer(Modifier.height(16.dp))
+                Text("Czas", fontSize = 22.sp)
+                Spacer(Modifier.height(16.dp))
+                Checkbox(
+                    checked = !disableTime,
+                    onCheckedChange = { disableTime = !it }
+                )
+                AnimatedVisibility(
+                    visible = !disableTime,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                )
+                {
+                    Column(
+                        Modifier.padding(horizontal = 40.dp).border(1.dp, Color(0xff303030), shape = RoundedCornerShape(16.dp)).padding(start=30.dp, end=30.dp, top=18.dp, bottom=36.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally)
                     {
-                        val dane = AddTaskPOST(text,"NULL", selectedID.toString())
-                        viewModel.addTask(dane)
+                        Text("Data", fontSize = 16.sp)
+                        Box() {
+                            OutlinedTextField(
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedTextColor = Color(0xffeaeaea)
+                                ),
+                                value = selectedDate,
+                                onValueChange = { },
+                                readOnly = true,
+                                trailingIcon = {
+                                    IconButton(onClick = { showDialog = !showDialog }) {
+                                        Icon(
+                                            imageVector = Icons.Default.DateRange,
+                                            contentDescription = "Select date"
+                                        )
+                                    }
+                                },
+                            )
+
+                            if (showDialog) {
+                                Popup(
+                                    onDismissRequest = { showDialog = false },
+                                    alignment = Alignment.TopStart
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(y = 64.dp)
+                                            .padding(16.dp)
+                                    ) {
+                                        DatePicker(
+                                            state = datePickerState,
+                                            showModeToggle = false
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Text("Godzina", fontSize = 16.sp)
+                        Box() {
+                            OutlinedTextField(
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedTextColor = Color(0xffeaeaea)
+                                ),
+                                value = String.format(Locale.getDefault(), "%02d:%02d", timePickerState.hour,timePickerState.minute),
+                                onValueChange = { },
+                                readOnly = true,
+                                trailingIcon = {
+                                    IconButton(onClick = { showDialogTime = !showDialogTime }) {
+                                        Icon(
+                                            imageVector = Icons.Default.DateRange,
+                                            contentDescription = "Select date"
+                                        )
+                                    }
+                                },
+                            )
+
+                            if (showDialogTime) {
+                                Popup(
+                                    onDismissRequest = { showDialogTime = false },
+                                    alignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xfd303030), shape= RoundedCornerShape(16.dp))
+                                            .padding(16.dp)
+                                    ) {
+
+                                        TimePicker(
+                                            state = timePickerState,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
-                    else
-                    {
-                        val dane = AddTaskPOST(text,String.format("%s %02d:%02d", selectedDate, timePickerState.hour, timePickerState.minute, Locale.getDefault()), selectedID.toString())
-                        viewModel.addTask(dane)
-                    }
-                    delay(400)
-                    nav.navigate(Screen.Zadania.route)
                 }
 
-            },
-                enabled = !nazwaError)
-            {Text("Dodaj zadanie")}
+            }
+            item{
+                Spacer(Modifier.height(16.dp))
+                Text("Rodzic", fontSize = 22.sp)
+                ExposedDropdownMenuBox(
+                    expanded = selectExpanded,
+                    onExpandedChange = { selectExpanded = !selectExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = selectedName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Wybierz opcję") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = selectExpanded)
+                        },
+                        modifier = Modifier.menuAnchor(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedTextColor = Color(0xffeaeaea),
+                        ),
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = selectExpanded,
+                        onDismissRequest = { selectExpanded = false }
+                    ) {
+                        rodzice.forEach { item ->
+                            DropdownMenuItem(
+                                text = { Text(item.first.nazwa) },
+                                onClick = {
+                                    selectedName = item.first.nazwa
+                                    selectedID = item.first.ID
+                                    selectExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                Button(onClick={
+                    scope.launch{
+                        if (disableTime)
+                        {
+                            val dane = AddTaskPOST(text,"NULL", selectedID.toString())
+                            viewModel.addTask(dane)
+                        }
+                        else
+                        {
+                            val dane = AddTaskPOST(text,String.format("%s %02d:%02d", selectedDate, timePickerState.hour, timePickerState.minute, Locale.getDefault()), selectedID.toString())
+                            viewModel.addTask(dane)
+                        }
+                        delay(400)
+                        nav.navigate(Screen.Zadania.route)
+                    }
+
+                },
+                    enabled = !nazwaError)
+                {Text("Dodaj zadanie")}
+                Spacer(Modifier.height(16.dp))
+            }
+
+
         }
     }
 
